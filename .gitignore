@@ -6,8 +6,6 @@
 *.ts
 .*.swp
 .DS_Store
-SSIM
 Session.vim
-dssim
 soq
 tags
