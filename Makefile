@@ -12,21 +12,15 @@ CPPFLAGS=-Wall -O3 -Wno-unused-function $(INCLUDES)
 
 INSTALL_PREFIX=$(PREFIX)
 
-SSIM_OBJS=SSIM.o
-SSIM=SSIM
-DSSIM_OBJS=dssim.o
-DSSIM=dssim
 SOQ_OBJS=soq.o
 SOQ=soq
 
-all: $(SSIM) $(DSSIM) $(SOQ)
+all: $(SOQ)
 
-$(SSIM): $(SSIM_OBJS)
-$(DSSIM): $(DSSIM_OBJS)
 $(SOQ): $(SOQ_OBJS)
 
 clean:
-	rm -rf $(SSIM_OBJS) $(DSSIM_OBJS) $(SOQ_OBJS) $(DSSIM) $(SSIM) $(SOQ) *.dSYM
+	rm -rf $(SOQ_OBJS) $(SOQ) *.dSYM
 	rm -f *.gcov *.gcda *.gcno
 
 install: $(PROG)
