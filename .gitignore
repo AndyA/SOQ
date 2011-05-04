@@ -1,0 +1,12 @@
+*.dSYM
+*.gcda
+*.gcno
+*.gcov
+*.o
+*.ts
+.*.swp
+.DS_Store
+SSIM
+Session.vim
+dssim
+tags
