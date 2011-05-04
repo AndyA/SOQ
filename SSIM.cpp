@@ -59,6 +59,7 @@ int main(int argc, char** argv)
 	int nChan=img1_temp->nChannels, d=IPL_DEPTH_32F;
 	CvSize size = cvSize(x, y);
 
+        // Convert to floating point
 	img1 = cvCreateImage( size, d, nChan);
 	img2 = cvCreateImage( size, d, nChan);
 
@@ -66,7 +67,6 @@ int main(int argc, char** argv)
 	cvConvert(img2_temp, img2);
 	cvReleaseImage(&img1_temp);
 	cvReleaseImage(&img2_temp);
-
 	
 	img1_sq = cvCreateImage( size, d, nChan);
 	img2_sq = cvCreateImage( size, d, nChan);
