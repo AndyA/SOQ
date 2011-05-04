@@ -12,7 +12,7 @@
 
 #include <cv.h>	
 #include <highgui.h>
-#include <iostream.h>
+#include <iostream>
 
 /*
  * Parameters : complete path to the two image to be compared
