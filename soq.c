@@ -150,7 +150,7 @@ main( int argc, char **argv ) {
   // 1% error max with the original matlab program
 
   for ( i = 2; i >= 0; i-- ) {
-    printf( "%c: %.4f%%\n", chan[i], index_scalar.val[i] );
+    printf( "%c: %.4f\n", chan[i], index_scalar.val[i] );
   }
 
   // if you use this code within a program
