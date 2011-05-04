@@ -29,18 +29,15 @@ die( const char *msg, ... ) {
   exit( 1 );
 }
 
-/*
- * Parameters : complete path to the two image to be compared
- * The file format must be supported by your OpenCV build
- */
 int
 main( int argc, char **argv ) {
+  double C1 = 6.5025, C2 = 58.5225;
+  int i;
+  const static char *chan = "BGR";
+
   if ( argc != 3 ) {
     die( "Usage: soq image0 image1" );
   }
-
-  int i;
-  double C1 = 6.5025, C2 = 58.5225;
 
   IplImage
       * img1 = NULL, *img2 = NULL, *img1_img2 = NULL,
@@ -51,7 +48,6 @@ main( int argc, char **argv ) {
       *sigma1_sq = NULL, *sigma2_sq = NULL, *sigma12 = NULL,
       *ssim_map = NULL, *temp1 = NULL, *temp2 = NULL, *temp3 = NULL;
 
-  /***************************** INITS **********************************/
   img1_temp = cvLoadImage( argv[1], CV_LOAD_IMAGE_ANYCOLOR );
   img2_temp = cvLoadImage( argv[2], CV_LOAD_IMAGE_ANYCOLOR );
 
@@ -153,10 +149,8 @@ main( int argc, char **argv ) {
   // through observation, there is approximately 
   // 1% error max with the original matlab program
 
-  printf( "(R, G & B SSIM index)\n" );
-
   for ( i = 2; i >= 0; i-- ) {
-    printf( "%.4f%%\n", index_scalar.val[i] );
+    printf( "%c: %.4f%%\n", chan[i], index_scalar.val[i] );
   }
 
   // if you use this code within a program
