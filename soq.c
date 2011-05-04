@@ -51,7 +51,7 @@ main( int argc, char **argv ) {
       *sigma1_sq = NULL, *sigma2_sq = NULL, *sigma12 = NULL,
       *ssim_map = NULL, *temp1 = NULL, *temp2 = NULL, *temp3 = NULL;
 
-        /***************************** INITS **********************************/
+  /***************************** INITS **********************************/
   img1_temp = cvLoadImage( argv[1], CV_LOAD_IMAGE_ANYCOLOR );
   img2_temp = cvLoadImage( argv[2], CV_LOAD_IMAGE_ANYCOLOR );
 
@@ -100,7 +100,7 @@ main( int argc, char **argv ) {
   temp3 = cvCreateImage( size, d, nChan );
 
   ssim_map = cvCreateImage( size, d, nChan );
-        /*************************** END INITS **********************************/
+  /*************************** END INITS **********************************/
 
   //////////////////////////////////////////////////////////////////////////
   // PRELIMINARY COMPUTING
@@ -156,7 +156,7 @@ main( int argc, char **argv ) {
   printf( "(R, G & B SSIM index)\n" );
 
   for ( i = 2; i >= 0; i-- ) {
-    printf( "%.2f%%\n", index_scalar.val[i] );
+    printf( "%.4f%%\n", index_scalar.val[i] );
   }
 
   // if you use this code within a program
