@@ -5,7 +5,7 @@ An OpenCV based testbed for various methods that attempt to produce
 objective measures of the subjective loss of quality incurred by image
 compression.
 
-Based with thanks on code found here:
+Based - with thanks - on code found here:
 
 http://mehdi.rabah.free.fr/SSIM/
 
