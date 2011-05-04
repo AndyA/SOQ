@@ -161,12 +161,28 @@ usage( void ) {
   exit( 1 );
 }
 
+static IplImage *
+load_image( const char *filename ) {
+  IplImage *iraw = cvLoadImage( filename, CV_LOAD_IMAGE_ANYCOLOR );
+  IplImage *icooked = NULL;
+
+  if ( !iraw ) {
+    die( "Could not read image file %s", filename );
+  }
+
+  CvSize size = cvSize( iraw->width, iraw->height );
+  icooked = cvCreateImage( size, IPL_DEPTH_32F, iraw->nChannels );
+  cvConvert( iraw, icooked );
+  cvReleaseImage( &iraw );
+
+  return icooked;
+}
+
 int
 main( int argc, char **argv ) {
   int ch;
 
-  IplImage *img1 = NULL, *img2 = NULL,
-      *img1_temp = NULL, *img2_temp = NULL;
+  IplImage *img1 = NULL, *img2 = NULL;
 
   void ( *func ) ( IplImage * orig, IplImage * ver, result_cb cb,
                    void *ctx ) = ssim;
@@ -199,29 +215,8 @@ main( int argc, char **argv ) {
     usage(  );
   }
 
-  img1_temp = cvLoadImage( argv[0], CV_LOAD_IMAGE_ANYCOLOR );
-  img2_temp = cvLoadImage( argv[1], CV_LOAD_IMAGE_ANYCOLOR );
-
-  if ( !img1_temp ) {
-    die( "Could not read image file %s", argv[1] );
-  }
-
-  if ( !img2_temp ) {
-    die( "Could not read image file %s", argv[2] );
-  }
-
-  int x = img1_temp->width, y = img1_temp->height;
-  int nChan = img1_temp->nChannels, d = IPL_DEPTH_32F;
-  CvSize size = cvSize( x, y );
-
-  // Convert to floating point
-  img1 = cvCreateImage( size, d, nChan );
-  img2 = cvCreateImage( size, d, nChan );
-
-  cvConvert( img1_temp, img1 );
-  cvConvert( img2_temp, img2 );
-  cvReleaseImage( &img1_temp );
-  cvReleaseImage( &img2_temp );
+  img1 = load_image( argv[0] );
+  img2 = load_image( argv[1] );
 
   func( img1, img2, result, NULL );
 
