@@ -21,7 +21,10 @@
 int main(int argc, char** argv)
 {
 	if(argc!=3)
-		return -1;
+	{
+		std::cerr << "Usage: dssim image0 image1\n";
+		return(-1);
+	}
 	
 	// default settings
 	double C1 = 6.5025, C2 = 58.5225;
@@ -37,11 +40,20 @@ int main(int argc, char** argv)
 	
 
 	/***************************** INITS **********************************/
-	img1_temp = cvLoadImage(argv[1]);
-	img2_temp = cvLoadImage(argv[2]);
+	img1_temp = cvLoadImage(argv[1], CV_LOAD_IMAGE_ANYCOLOR);
+	img2_temp = cvLoadImage(argv[2], CV_LOAD_IMAGE_ANYCOLOR);
 
-	if(img1_temp==NULL || img2_temp==NULL)
-		return -1;
+	if(!img1_temp)
+	{
+		std::cerr << "Could not read image file " << argv[1] << "\n";
+		return(-1);
+	}
+
+	if(!img2_temp)
+	{
+		std::cerr << "Could not read image file " << argv[2] << "\n";
+		return(-1);
+	}
 
 	int x=img1_temp->width, y=img1_temp->height;
 	int nChan=img1_temp->nChannels, d=IPL_DEPTH_32F;
