@@ -29,48 +29,22 @@ die( const char *msg, ... ) {
   exit( 1 );
 }
 
-int
-main( int argc, char **argv ) {
+typedef void ( *result_cb ) ( const char *name, double value, void *ctx );
+
+static void
+ssim( IplImage * img1, IplImage * img2, result_cb cb, void *ctx ) {
+  const static char *chan[] = { "B", "G", "R" };
   double C1 = 6.5025, C2 = 58.5225;
-  int i;
-  const static char *chan = "BGR";
-
-  if ( argc != 3 ) {
-    die( "Usage: soq image0 image1" );
-  }
-
-  IplImage
-      * img1 = NULL, *img2 = NULL, *img1_img2 = NULL,
-      *img1_temp = NULL, *img2_temp = NULL,
-      *img1_sq = NULL, *img2_sq = NULL,
+  IplImage *img1_img2 = NULL, *img1_sq = NULL, *img2_sq = NULL,
       *mu1 = NULL, *mu2 = NULL,
       *mu1_sq = NULL, *mu2_sq = NULL, *mu1_mu2 = NULL,
       *sigma1_sq = NULL, *sigma2_sq = NULL, *sigma12 = NULL,
       *ssim_map = NULL, *temp1 = NULL, *temp2 = NULL, *temp3 = NULL;
+  int i;
 
-  img1_temp = cvLoadImage( argv[1], CV_LOAD_IMAGE_ANYCOLOR );
-  img2_temp = cvLoadImage( argv[2], CV_LOAD_IMAGE_ANYCOLOR );
-
-  if ( !img1_temp ) {
-    die( "Could not read image file %s", argv[1] );
-  }
-
-  if ( !img2_temp ) {
-    die( "Could not read image file %s", argv[2] );
-  }
-
-  int x = img1_temp->width, y = img1_temp->height;
-  int nChan = img1_temp->nChannels, d = IPL_DEPTH_32F;
-  CvSize size = cvSize( x, y );
-
-  // Convert to floating point
-  img1 = cvCreateImage( size, d, nChan );
-  img2 = cvCreateImage( size, d, nChan );
-
-  cvConvert( img1_temp, img1 );
-  cvConvert( img2_temp, img2 );
-  cvReleaseImage( &img1_temp );
-  cvReleaseImage( &img2_temp );
+  int nChan = img1->nChannels;
+  int d = img1->depth;
+  CvSize size = cvSize( img1->width, img1->height );
 
   img1_sq = cvCreateImage( size, d, nChan );
   img2_sq = cvCreateImage( size, d, nChan );
@@ -146,14 +120,71 @@ main( int argc, char **argv ) {
 
   CvScalar index_scalar = cvAvg( ssim_map, NULL );
 
-  // through observation, there is approximately 
-  // 1% error max with the original matlab program
-
   for ( i = 2; i >= 0; i-- ) {
-    printf( "%c: %.4f\n", chan[i], index_scalar.val[i] );
+    cb( chan[i], index_scalar.val[i], ctx );
   }
 
-  // if you use this code within a program
-  // don't forget to release the IplImages
+  cvReleaseImage( &img1_img2 );
+  cvReleaseImage( &img1_sq );
+  cvReleaseImage( &img2_sq );
+  cvReleaseImage( &mu1 );
+  cvReleaseImage( &mu2 );
+  cvReleaseImage( &mu1_sq );
+  cvReleaseImage( &mu2_sq );
+  cvReleaseImage( &mu1_mu2 );
+  cvReleaseImage( &sigma1_sq );
+  cvReleaseImage( &sigma2_sq );
+  cvReleaseImage( &sigma12 );
+  cvReleaseImage( &ssim_map );
+  cvReleaseImage( &temp1 );
+  cvReleaseImage( &temp2 );
+  cvReleaseImage( &temp3 );
+}
+
+static void
+result( const char *name, double value, void *ctx ) {
+  ( void ) ctx;
+  printf( "%s: %0.4f\n", name, value );
+}
+
+int
+main( int argc, char **argv ) {
+
+  if ( argc != 3 ) {
+    die( "Usage: soq image0 image1" );
+  }
+
+  IplImage *img1 = NULL, *img2 = NULL,
+      *img1_temp = NULL, *img2_temp = NULL;
+
+  img1_temp = cvLoadImage( argv[1], CV_LOAD_IMAGE_ANYCOLOR );
+  img2_temp = cvLoadImage( argv[2], CV_LOAD_IMAGE_ANYCOLOR );
+
+  if ( !img1_temp ) {
+    die( "Could not read image file %s", argv[1] );
+  }
+
+  if ( !img2_temp ) {
+    die( "Could not read image file %s", argv[2] );
+  }
+
+  int x = img1_temp->width, y = img1_temp->height;
+  int nChan = img1_temp->nChannels, d = IPL_DEPTH_32F;
+  CvSize size = cvSize( x, y );
+
+  // Convert to floating point
+  img1 = cvCreateImage( size, d, nChan );
+  img2 = cvCreateImage( size, d, nChan );
+
+  cvConvert( img1_temp, img1 );
+  cvConvert( img2_temp, img2 );
+  cvReleaseImage( &img1_temp );
+  cvReleaseImage( &img2_temp );
+
+  ssim( img1, img2, result, NULL );
+
+  cvReleaseImage( &img1 );
+  cvReleaseImage( &img2 );
+
   return 0;
 }
