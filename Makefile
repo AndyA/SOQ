@@ -35,3 +35,6 @@ install: $(PROG)
 
 tags:
 	ctags -R .
+
+test: $(SOQ)
+	prove t/*.t
