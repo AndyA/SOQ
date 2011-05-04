@@ -36,6 +36,11 @@ die( const char *msg, ... ) {
 typedef void ( *result_cb ) ( const char *name, double value, void *ctx );
 
 static void
+psnr( IplImage * img1, IplImage * img2, result_cb cb, void *ctx ) {
+  die( "Not implemented" );
+}
+
+static void
 ssim( IplImage * img1, IplImage * img2, result_cb cb, void *ctx ) {
   const static char *chan[] = { "B", "G", "R" };
   double C1 = 6.5025, C2 = 58.5225;
@@ -155,6 +160,7 @@ static void
 usage( void ) {
   fprintf( stderr, "Usage: " PROG " [options] <original> <version>\n\n"
            "Options:\n"
+           "      --psnr      Perform PSNR analysis\n"
            "      --ssim      Perform SSIM analysis\n"
            "  -V, --version   See version number\n"
            "  -h, --help      See this text\n\n" );
@@ -190,6 +196,7 @@ main( int argc, char **argv ) {
   static struct option opts[] = {
     {"help", no_argument, NULL, 'h'},
     {"ssim", no_argument, NULL, '\1'},
+    {"psnr", no_argument, NULL, '\2'},
     {"version", no_argument, NULL, 'V'},
     {NULL, 0, NULL, 0}
   };
@@ -201,6 +208,9 @@ main( int argc, char **argv ) {
       return 0;
     case '\1':
       func = ssim;
+      break;
+    case '\2':
+      func = psnr;
       break;
     case 'h':
     default:

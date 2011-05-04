@@ -69,7 +69,7 @@ while ( my ( $name, $want ) = each %test ) {
 }
 
 sub soq {
-  my @cmd = ( SOQ, @_ );
+  my @cmd = ( SOQ, '--ssim', @_ );
   my %r = ();
   open my $ch, '-|', @cmd or die SOQ, " failed: $!\n";
   while ( <$ch> ) {
