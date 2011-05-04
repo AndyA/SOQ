@@ -10,6 +10,7 @@
  * The original work may be under copyrights. 
  */
 
+#include <getopt.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,6 +18,9 @@
 
 #include <cv.h>
 #include <highgui.h>
+
+#define PROG "soq"
+#define VERSION "0.01"
 
 static void
 die( const char *msg, ... ) {
@@ -147,18 +151,56 @@ result( const char *name, double value, void *ctx ) {
   printf( "%s: %0.4f\n", name, value );
 }
 
+static void
+usage( void ) {
+  fprintf( stderr, "Usage: " PROG " [options] <original> <version>\n\n"
+           "Options:\n"
+           "      --ssim      Perform SSIM analysis\n"
+           "  -V, --version   See version number\n"
+           "  -h, --help      See this text\n\n" );
+  exit( 1 );
+}
+
 int
 main( int argc, char **argv ) {
-
-  if ( argc != 3 ) {
-    die( "Usage: soq image0 image1" );
-  }
+  int ch;
 
   IplImage *img1 = NULL, *img2 = NULL,
       *img1_temp = NULL, *img2_temp = NULL;
 
-  img1_temp = cvLoadImage( argv[1], CV_LOAD_IMAGE_ANYCOLOR );
-  img2_temp = cvLoadImage( argv[2], CV_LOAD_IMAGE_ANYCOLOR );
+  void ( *func ) ( IplImage * orig, IplImage * ver, result_cb cb,
+                   void *ctx ) = ssim;
+
+  static struct option opts[] = {
+    {"help", no_argument, NULL, 'h'},
+    {"ssim", no_argument, NULL, '\1'},
+    {"version", no_argument, NULL, 'V'},
+    {NULL, 0, NULL, 0}
+  };
+
+  while ( ch = getopt_long( argc, argv, "hV\1", opts, NULL ), ch != -1 ) {
+    switch ( ch ) {
+    case 'V':
+      printf( "%s %s\n", PROG, VERSION );
+      return 0;
+    case '\1':
+      func = ssim;
+      break;
+    case 'h':
+    default:
+      usage(  );
+    }
+  }
+
+  argc -= optind;
+  argv += optind;
+
+  if ( argc != 2 ) {
+    usage(  );
+  }
+
+  img1_temp = cvLoadImage( argv[0], CV_LOAD_IMAGE_ANYCOLOR );
+  img2_temp = cvLoadImage( argv[1], CV_LOAD_IMAGE_ANYCOLOR );
 
   if ( !img1_temp ) {
     die( "Could not read image file %s", argv[1] );
@@ -181,7 +223,7 @@ main( int argc, char **argv ) {
   cvReleaseImage( &img1_temp );
   cvReleaseImage( &img2_temp );
 
-  ssim( img1, img2, result, NULL );
+  func( img1, img2, result, NULL );
 
   cvReleaseImage( &img1 );
   cvReleaseImage( &img2 );
