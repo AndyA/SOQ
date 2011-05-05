@@ -12,6 +12,7 @@ use constant SOQ => './soq';
 my %Opt = (
   size   => '1024x576',
   output => 'report.csv',
+  mode   => 'ssim,psnr',
 );
 
 GetOptions(
@@ -21,6 +22,8 @@ GetOptions(
 
 my @opt = grep { /^-/ } @ARGV;
 my @arg = grep { !/^-/ } @ARGV;
+
+my @mode = split /,/, $Opt{mode};
 
 die "Usage: $0 --size <W>x<H> <refvid> <encvid>\n"
  unless @arg == 2;
@@ -86,16 +89,15 @@ sub psnr {
       sleep 1;
       redo CMP;
     }
-    my @cmd = ( SOQ, @opt, @f );
-    print join( ' ', @cmd ), "\n";
+
     my $rec = {};
-    open my $ch, '-|', @cmd or die SOQ, " failed: $!\n";
-    while ( <$ch> ) {
-      chomp;
-      /^(.+?):\s+(.+)$/ or die "Bad output: $_\n";
-      $rec->{$1} = $2;
+    for my $mode ( @mode ) {
+      my $rm = soq( "--$mode", @opt, @f );
+      while ( my ( $k, $v ) = each %$rm ) {
+        $rec->{"$mode.$k"} = $v;
+      }
     }
-    close $ch or die SOQ, " failed: $?\n";
+
     push @data, $rec;
 
     unlink for @f;
@@ -103,6 +105,20 @@ sub psnr {
   }
   $base->rmtree;
   return \@data;
+}
+
+sub soq {
+  my @cmd = ( SOQ, @_ );
+  print join( ' ', @cmd ), "\n";
+  my $rec = {};
+  open my $ch, '-|', @cmd or die SOQ, " failed: $!\n";
+  while ( <$ch> ) {
+    chomp;
+    /^(.+?):\s+(.+)$/ or die "Bad output: $_\n";
+    $rec->{$1} = $2;
+  }
+  close $ch or die SOQ, " failed: $?\n";
+  return $rec;
 }
 
 sub extract_to {
