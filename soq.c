@@ -10,6 +10,7 @@
  * The original work may be under copyrights. 
  */
 
+#include <ctype.h>
 #include <getopt.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -92,8 +93,13 @@ static struct color_map {
 
 static void
 to4cc( char out[5], const char *in ) {
-  memset( out, 0, 5 );
-  strncpy( out, in, 4 );
+  int i;
+  for ( i = 0; i < 4 && in[i]; i++ ) {
+    out[i] = toupper( in[i] );
+  }
+  for ( ; i < 5; i++ ) {
+    out[i] = '\0';
+  }
 }
 
 static int
@@ -120,15 +126,15 @@ static int
 adjust_colourspace( IplImage ** img, const char *in, const char *out ) {
   int code;
   IplImage *nimg = NULL;
+  char in4cc[5], out4cc[5];
+  to4cc( in4cc, in );
+  to4cc( out4cc, out );
 
-  if ( !strcmp( in, out ) ) {
+  if ( !memcmp( in4cc, out4cc, 4 ) ) {
     return 0;
   }
 
   if ( code = colour_mapping( in, out ), code < 0 ) {
-    char in4cc[5], out4cc[5];
-    to4cc( in4cc, in );
-    to4cc( out4cc, out );
     die( "No colour mapping %s -> %s", in4cc, out4cc );
   }
 
@@ -301,17 +307,19 @@ static void
 usage( void ) {
   fprintf( stderr, "Usage: " PROG " [options] <original> <version>\n\n"
            "Options:\n"
-           "      --psnr      Perform PSNR analysis\n"
-           "      --ssim      Perform SSIM analysis\n"
-           "      --mse       Perform MSE analysis\n"
-           "  -V, --version   See version number\n"
-           "  -h, --help      See this text\n\n" );
+           "      --psnr            Perform PSNR analysis\n"
+           "      --ssim            Perform SSIM analysis\n"
+           "      --mse             Perform MSE analysis\n"
+           "  -C, --colourspace=X   Convert to named colourspace (RGB/BGR/YUV)\n"
+           "  -V, --version         See version number\n"
+           "  -h, --help            See this text\n\n" );
   exit( 1 );
 }
 
 int
 main( int argc, char **argv ) {
   int ch;
+  char *colourspace;
 
   IplImage *img1 = NULL, *img2 = NULL;
 
@@ -323,11 +331,14 @@ main( int argc, char **argv ) {
     {"ssim", no_argument, NULL, '\1'},
     {"psnr", no_argument, NULL, '\2'},
     {"mse", no_argument, NULL, '\3'},
+    {"colourspace", required_argument, NULL, 'C'},
+    {"colorspace", required_argument, NULL, 'C'},
     {"version", no_argument, NULL, 'V'},
     {NULL, 0, NULL, 0}
   };
 
-  while ( ch = getopt_long( argc, argv, "hV\1", opts, NULL ), ch != -1 ) {
+  while ( ch =
+          getopt_long( argc, argv, "hV\1\2\3C:", opts, NULL ), ch != -1 ) {
     switch ( ch ) {
     case 'V':
       printf( "%s %s\n", PROG, VERSION );
@@ -340,6 +351,9 @@ main( int argc, char **argv ) {
       break;
     case '\3':
       func = mse;
+      break;
+    case 'C':
+      colourspace = optarg;
       break;
     case 'h':
     default:
@@ -356,6 +370,10 @@ main( int argc, char **argv ) {
 
   img1 = load_image( argv[0] );
   img2 = load_image( argv[1] );
+
+  if ( colourspace ) {
+    adjust_colourspace( &img2, img2->channelSeq, colourspace );
+  }
 
   make_like( &img1, img2 );
 
