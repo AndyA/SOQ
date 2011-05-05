@@ -134,6 +134,7 @@ adjust_colourspace( IplImage ** img, const char *in, const char *out ) {
 
   nimg = img_like( *img );
   cvCvtColor( *img, nimg, code );
+  strncpy( nimg->channelSeq, out, 4 );
   cvReleaseImage( img );
   *img = nimg;
 
@@ -166,7 +167,6 @@ make_like( IplImage ** img, const IplImage * ref ) {
 static void
 mse( IplImage * img1, IplImage * img2, result_cb cb, void *ctx ) {
   IplImage *err = img_like( img1 );
-  const static char *chan[] = { "B", "G", "R" };
   int i;
 
   cvSub( img1, img2, err, NULL );
@@ -174,8 +174,10 @@ mse( IplImage * img1, IplImage * img2, result_cb cb, void *ctx ) {
   CvScalar mse = cvAvg( err, NULL );
   cvReleaseImage( &err );
 
-  for ( i = 2; i >= 0; i-- ) {
-    cb( chan[i], mse.val[i], ctx );
+  for ( i = 0; i < img1->nChannels; i++ ) {
+    char *cn = "?";
+    cn[0] = img1->channelSeq[i];
+    cb( cn, mse.val[i], ctx );
   }
 }
 
@@ -195,7 +197,6 @@ psnr( IplImage * img1, IplImage * img2, result_cb cb, void *ctx ) {
 
 static void
 ssim( IplImage * img1, IplImage * img2, result_cb cb, void *ctx ) {
-  const static char *chan[] = { "B", "G", "R" };
   double C1 = 6.5025, C2 = 58.5225;
   IplImage *img1_img2 = NULL, *img1_sq = NULL, *img2_sq = NULL,
       *mu1 = NULL, *mu2 = NULL,
@@ -278,8 +279,10 @@ ssim( IplImage * img1, IplImage * img2, result_cb cb, void *ctx ) {
 
   CvScalar index_scalar = cvAvg( ssim_map, NULL );
 
-  for ( i = 2; i >= 0; i-- ) {
-    cb( chan[i], index_scalar.val[i], ctx );
+  for ( i = 0; i < img1->nChannels; i++ ) {
+    char cn[2] = "?";
+    cn[0] = img1->channelSeq[i];
+    cb( cn, index_scalar.val[i], ctx );
   }
 
   cvReleaseImage( &img1_img2 );
