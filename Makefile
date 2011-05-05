@@ -8,7 +8,8 @@ LIBS=-lopencv_core -lopencv_imgproc -lopencv_highgui -lstdc++
 
 INCLUDES=-I/opt/local/include -I/opt/local/include/opencv -I$(INCDIR)
 LDFLAGS=-L/opt/local/lib $(LIBS) -L$(LIBDIR)
-CPPFLAGS=-Wall -O3 -Wno-unused-function $(INCLUDES)
+OPTIMIZE=-O3
+CPPFLAGS=$(EXTRAFLAGS) -Wall $(OPTIMIZE) -Wno-unused-function $(INCLUDES)
 
 INSTALL_PREFIX=$(PREFIX)
 
@@ -28,7 +29,7 @@ install: $(PROG)
 	install $(SOQ) $(INSTALL_PREFIX)/bin
 
 tags:
-	ctags -R .
+	ctags -R *.c inc
 
 test: $(SOQ)
 	prove t/*.t
