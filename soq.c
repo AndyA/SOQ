@@ -22,6 +22,8 @@
 #define PROG "soq"
 #define VERSION "0.01"
 
+#define PSNR(x) ( 10.0 * log10( 255.0 * 255.0 / (x) ))
+
 typedef void ( *result_cb ) ( const char *name, double value, void *ctx );
 
 typedef struct {
@@ -69,7 +71,7 @@ mse( IplImage * img1, IplImage * img2, result_cb cb, void *ctx ) {
 static void
 psnr_cb( const char *name, double value, void *ctx ) {
   closure *cl = ( closure * ) ctx;
-  cl->cb( name, 10.0 * log10( 255.0 * 255.0 / value ), cl->ctx );
+  cl->cb( name, PSNR( value ), cl->ctx );
 }
 
 static void
