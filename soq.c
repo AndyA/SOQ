@@ -206,50 +206,41 @@ ssim( IplImage * img1, IplImage * img2, result_cb cb, void *ctx ) {
   int i;
 
   img1_sq = img_like( img1 );
-  img2_sq = img_like( img1 );
-  img1_img2 = img_like( img1 );
-
-  cvPow( img1, img1_sq, 2 );
-  cvPow( img2, img2_sq, 2 );
-  cvMul( img1, img2, img1_img2, 1 );
-
   mu1 = img_like( img1 );
-  mu2 = img_like( img1 );
-
   mu1_sq = img_like( img1 );
-  mu2_sq = img_like( img1 );
-  mu1_mu2 = img_like( img1 );
-
   sigma1_sq = img_like( img1 );
+  cvPow( img1, img1_sq, 2 );
+  cvSmooth( img1, mu1, CV_GAUSSIAN, 11, 11, 1.5, 0 );
+  cvPow( mu1, mu1_sq, 2 );
+  cvSmooth( img1_sq, sigma1_sq, CV_GAUSSIAN, 11, 11, 1.5, 0 );
+  cvAddWeighted( sigma1_sq, 1, mu1_sq, -1, 0, sigma1_sq );
+  cvReleaseImage( &img1_sq );
+
+  img2_sq = img_like( img1 );
+  mu2 = img_like( img1 );
+  mu2_sq = img_like( img1 );
   sigma2_sq = img_like( img1 );
+  cvPow( img2, img2_sq, 2 );
+  cvSmooth( img2, mu2, CV_GAUSSIAN, 11, 11, 1.5, 0 );
+  cvPow( mu2, mu2_sq, 2 );
+  cvSmooth( img2_sq, sigma2_sq, CV_GAUSSIAN, 11, 11, 1.5, 0 );
+  cvAddWeighted( sigma2_sq, 1, mu2_sq, -1, 0, sigma2_sq );
+  cvReleaseImage( &img2_sq );
+
+  mu1_mu2 = img_like( img1 );
   sigma12 = img_like( img1 );
+  img1_img2 = img_like( img1 );
+  cvMul( img1, img2, img1_img2, 1 );
+  cvMul( mu1, mu2, mu1_mu2, 1 );
+  cvSmooth( img1_img2, sigma12, CV_GAUSSIAN, 11, 11, 1.5, 0 );
+  cvAddWeighted( sigma12, 1, mu1_mu2, -1, 0, sigma12 );
+  cvReleaseImage( &mu1 );
+  cvReleaseImage( &mu2 );
 
   temp1 = img_like( img1 );
   temp2 = img_like( img1 );
   temp3 = img_like( img1 );
 
-  ssim_map = img_like( img1 );
-  /*************************** END INITS **********************************/
-
-  //////////////////////////////////////////////////////////////////////////
-  // PRELIMINARY COMPUTING
-  cvSmooth( img1, mu1, CV_GAUSSIAN, 11, 11, 1.5, 0 );
-  cvSmooth( img2, mu2, CV_GAUSSIAN, 11, 11, 1.5, 0 );
-
-  cvPow( mu1, mu1_sq, 2 );
-  cvPow( mu2, mu2_sq, 2 );
-  cvMul( mu1, mu2, mu1_mu2, 1 );
-
-  cvSmooth( img1_sq, sigma1_sq, CV_GAUSSIAN, 11, 11, 1.5, 0 );
-  cvAddWeighted( sigma1_sq, 1, mu1_sq, -1, 0, sigma1_sq );
-
-  cvSmooth( img2_sq, sigma2_sq, CV_GAUSSIAN, 11, 11, 1.5, 0 );
-  cvAddWeighted( sigma2_sq, 1, mu2_sq, -1, 0, sigma2_sq );
-
-  cvSmooth( img1_img2, sigma12, CV_GAUSSIAN, 11, 11, 1.5, 0 );
-  cvAddWeighted( sigma12, 1, mu1_mu2, -1, 0, sigma12 );
-
-  //////////////////////////////////////////////////////////////////////////
   // FORMULA
 
   // (2*mu1_mu2 + C1)
@@ -274,10 +265,23 @@ ssim( IplImage * img1, IplImage * img2, result_cb cb, void *ctx ) {
   // ((mu1_sq + mu2_sq + C1).*(sigma1_sq + sigma2_sq + C2))
   cvMul( temp1, temp2, temp1, 1 );
 
-  // ((2*mu1_mu2 + C1).*(2*sigma12 + C2))./((mu1_sq + mu2_sq + C1).*(sigma1_sq + sigma2_sq + C2))
+  // ((2*mu1_mu2 + C1).*(2*sigma12 + C2))./((mu1_sq + mu2_sq 
+  //    + C1).*(sigma1_sq + sigma2_sq + C2))
+  ssim_map = img_like( img1 );
   cvDiv( temp3, temp1, ssim_map, 1 );
-
   CvScalar index_scalar = cvAvg( ssim_map, NULL );
+  cvReleaseImage( &ssim_map );
+
+  cvReleaseImage( &img1_img2 );
+  cvReleaseImage( &mu1_sq );
+  cvReleaseImage( &mu2_sq );
+  cvReleaseImage( &mu1_mu2 );
+  cvReleaseImage( &sigma1_sq );
+  cvReleaseImage( &sigma2_sq );
+  cvReleaseImage( &sigma12 );
+  cvReleaseImage( &temp1 );
+  cvReleaseImage( &temp2 );
+  cvReleaseImage( &temp3 );
 
   for ( i = 0; i < img1->nChannels; i++ ) {
     char cn[2] = "?";
@@ -285,21 +289,6 @@ ssim( IplImage * img1, IplImage * img2, result_cb cb, void *ctx ) {
     cb( cn, index_scalar.val[i], ctx );
   }
 
-  cvReleaseImage( &img1_img2 );
-  cvReleaseImage( &img1_sq );
-  cvReleaseImage( &img2_sq );
-  cvReleaseImage( &mu1 );
-  cvReleaseImage( &mu2 );
-  cvReleaseImage( &mu1_sq );
-  cvReleaseImage( &mu2_sq );
-  cvReleaseImage( &mu1_mu2 );
-  cvReleaseImage( &sigma1_sq );
-  cvReleaseImage( &sigma2_sq );
-  cvReleaseImage( &sigma12 );
-  cvReleaseImage( &ssim_map );
-  cvReleaseImage( &temp1 );
-  cvReleaseImage( &temp2 );
-  cvReleaseImage( &temp3 );
 }
 
 static void
