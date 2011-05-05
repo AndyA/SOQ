@@ -175,7 +175,7 @@ mse( IplImage * img1, IplImage * img2, result_cb cb, void *ctx ) {
   cvReleaseImage( &err );
 
   for ( i = 0; i < img1->nChannels; i++ ) {
-    char *cn = "?";
+    char cn[2] = "?";
     cn[0] = img1->channelSeq[i];
     cb( cn, mse.val[i], ctx );
   }
