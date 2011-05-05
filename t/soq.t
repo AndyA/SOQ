@@ -14,7 +14,7 @@ use constant ORIG    => File::Spec->catfile( CORPUS, 'orig.jpg' );
 use constant EPSILON => 0.001;
 
 my $REGEN = 0;
-my $ONLY  = 0;
+my $ONLY  = undef;
 GetOptions(
   'regen'  => \$REGEN,
   'only:s' => \$ONLY,
@@ -75,12 +75,11 @@ my %test = (
 
 my %results = ();
 
-my $like
- = defined $ONLY
- ? qr{@{[join '|', map quotemeta, split ',', $ONLY]}}
- : qr{};
-
-my @mode = grep { /^$like$/ } qw( ssim mse psnr );
+my @mode = qw( ssim mse psnr );
+if ( defined $ONLY ) {
+  my $like = qr{@{[join '|', map quotemeta, split ',', $ONLY]}};
+  @mode = grep { /^$like$/ } @mode;
+}
 
 plan tests => ( 1 + 4 * @mode ) * keys %test;
 
