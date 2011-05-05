@@ -324,7 +324,7 @@ main( int argc, char **argv ) {
   IplImage *img1 = NULL, *img2 = NULL;
 
   void ( *func ) ( IplImage * orig, IplImage * ver, result_cb cb,
-                   void *ctx ) = ssim;
+                   void *ctx ) = psnr;
 
   static struct option opts[] = {
     {"help", no_argument, NULL, 'h'},
