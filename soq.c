@@ -22,6 +22,13 @@
 #define PROG "soq"
 #define VERSION "0.01"
 
+typedef void ( *result_cb ) ( const char *name, double value, void *ctx );
+
+typedef struct {
+  result_cb cb;
+  void *ctx;
+} closure;
+
 static void
 die( const char *msg, ... ) {
   va_list ap;
@@ -33,11 +40,44 @@ die( const char *msg, ... ) {
   exit( 1 );
 }
 
-typedef void ( *result_cb ) ( const char *name, double value, void *ctx );
+static IplImage *
+img_like( const IplImage * img ) {
+  CvSize size = cvSize( img->width, img->height );
+  IplImage *inew = cvCreateImage( size, img->depth, img->nChannels );
+  if ( !inew ) {
+    die( "Out of memory" );
+  }
+  return inew;
+}
+
+static void
+mse( IplImage * img1, IplImage * img2, result_cb cb, void *ctx ) {
+  IplImage *err = img_like( img1 );
+  const static char *chan[] = { "B", "G", "R" };
+  int i;
+
+  cvSub( img1, img2, err, NULL );
+  cvPow( err, err, 2 );
+  CvScalar mse = cvAvg( err, NULL );
+  cvReleaseImage( &err );
+
+  for ( i = 2; i >= 0; i-- ) {
+    cb( chan[i], mse.val[i], ctx );
+  }
+}
+
+static void
+psnr_cb( const char *name, double value, void *ctx ) {
+  closure *cl = ( closure * ) ctx;
+  cl->cb( name, 10.0 * log10( 255.0 * 255.0 / value ), cl->ctx );
+}
 
 static void
 psnr( IplImage * img1, IplImage * img2, result_cb cb, void *ctx ) {
-  die( "Not implemented" );
+  closure cl;
+  cl.cb = cb;
+  cl.ctx = ctx;
+  mse( img1, img2, psnr_cb, ( void * ) &cl );
 }
 
 static void
@@ -51,34 +91,30 @@ ssim( IplImage * img1, IplImage * img2, result_cb cb, void *ctx ) {
       *ssim_map = NULL, *temp1 = NULL, *temp2 = NULL, *temp3 = NULL;
   int i;
 
-  int nChan = img1->nChannels;
-  int d = img1->depth;
-  CvSize size = cvSize( img1->width, img1->height );
-
-  img1_sq = cvCreateImage( size, d, nChan );
-  img2_sq = cvCreateImage( size, d, nChan );
-  img1_img2 = cvCreateImage( size, d, nChan );
+  img1_sq = img_like( img1 );
+  img2_sq = img_like( img1 );
+  img1_img2 = img_like( img1 );
 
   cvPow( img1, img1_sq, 2 );
   cvPow( img2, img2_sq, 2 );
   cvMul( img1, img2, img1_img2, 1 );
 
-  mu1 = cvCreateImage( size, d, nChan );
-  mu2 = cvCreateImage( size, d, nChan );
+  mu1 = img_like( img1 );
+  mu2 = img_like( img1 );
 
-  mu1_sq = cvCreateImage( size, d, nChan );
-  mu2_sq = cvCreateImage( size, d, nChan );
-  mu1_mu2 = cvCreateImage( size, d, nChan );
+  mu1_sq = img_like( img1 );
+  mu2_sq = img_like( img1 );
+  mu1_mu2 = img_like( img1 );
 
-  sigma1_sq = cvCreateImage( size, d, nChan );
-  sigma2_sq = cvCreateImage( size, d, nChan );
-  sigma12 = cvCreateImage( size, d, nChan );
+  sigma1_sq = img_like( img1 );
+  sigma2_sq = img_like( img1 );
+  sigma12 = img_like( img1 );
 
-  temp1 = cvCreateImage( size, d, nChan );
-  temp2 = cvCreateImage( size, d, nChan );
-  temp3 = cvCreateImage( size, d, nChan );
+  temp1 = img_like( img1 );
+  temp2 = img_like( img1 );
+  temp3 = img_like( img1 );
 
-  ssim_map = cvCreateImage( size, d, nChan );
+  ssim_map = img_like( img1 );
   /*************************** END INITS **********************************/
 
   //////////////////////////////////////////////////////////////////////////
@@ -162,6 +198,7 @@ usage( void ) {
            "Options:\n"
            "      --psnr      Perform PSNR analysis\n"
            "      --ssim      Perform SSIM analysis\n"
+           "      --mse       Perform MSE analysis\n"
            "  -V, --version   See version number\n"
            "  -h, --help      See this text\n\n" );
   exit( 1 );
@@ -197,6 +234,7 @@ main( int argc, char **argv ) {
     {"help", no_argument, NULL, 'h'},
     {"ssim", no_argument, NULL, '\1'},
     {"psnr", no_argument, NULL, '\2'},
+    {"mse", no_argument, NULL, '\3'},
     {"version", no_argument, NULL, 'V'},
     {NULL, 0, NULL, 0}
   };
@@ -211,6 +249,9 @@ main( int argc, char **argv ) {
       break;
     case '\2':
       func = psnr;
+      break;
+    case '\3':
+      func = mse;
       break;
     case 'h':
     default:
