@@ -43,13 +43,124 @@ die( const char *msg, ... ) {
 }
 
 static IplImage *
-img_like( const IplImage * img ) {
-  CvSize size = cvSize( img->width, img->height );
-  IplImage *inew = cvCreateImage( size, img->depth, img->nChannels );
+load_image( const char *filename ) {
+  IplImage *iraw = cvLoadImage( filename, CV_LOAD_IMAGE_ANYCOLOR );
+  IplImage *icooked = NULL;
+
+  if ( !iraw ) {
+    die( "Could not read image file %s", filename );
+  }
+
+  CvSize size = cvSize( iraw->width, iraw->height );
+  icooked = cvCreateImage( size, IPL_DEPTH_32F, iraw->nChannels );
+  cvConvert( iraw, icooked );
+  cvReleaseImage( &iraw );
+
+  return icooked;
+}
+
+static IplImage *
+img_new( CvSize size, int depth, int nChannels ) {
+  IplImage *inew = cvCreateImage( size, depth, nChannels );
   if ( !inew ) {
     die( "Out of memory" );
   }
   return inew;
+}
+
+static IplImage *
+img_like( const IplImage * img ) {
+  CvSize size = cvSize( img->width, img->height );
+  return img_new( size, img->depth, img->nChannels );
+}
+
+/* *INDENT-OFF* */
+static struct color_map {
+  const char *in;
+  const char *out;
+  int code;
+} color_map[] = {
+  { "RGB", "YUV", CV_RGB2YCrCb },
+  { "BGR", "YUV", CV_BGR2YCrCb },
+  { "YUV", "RGB", CV_YCrCb2RGB },
+  { "YUV", "BGR", CV_YCrCb2BGR }, 
+  { "RGB", "BGR", CV_RGB2BGR },
+  { "BGR", "RGB", CV_BGR2RGB },
+  { NULL, NULL, 0 }
+};
+/* *INDENT-ON* */
+
+static void
+to4cc( char out[5], const char *in ) {
+  memset( out, 0, 5 );
+  strncpy( out, in, 4 );
+}
+
+static int
+colour_mapping( const char *in, const char *out ) {
+  char in4cc[5], out4cc[5], cmin4cc[5], cmout4cc[5];
+  struct color_map *cm = color_map;
+
+  to4cc( in4cc, in );
+  to4cc( out4cc, out );
+
+  while ( cm->in ) {
+    to4cc( cmin4cc, cm->in );
+    to4cc( cmout4cc, cm->out );
+    if ( 0 == memcmp( in4cc, cmin4cc, 4 ) &&
+         0 == memcmp( out4cc, cmout4cc, 4 ) ) {
+      return cm->code;
+    }
+    cm++;
+  }
+  return -1;
+}
+
+static int
+adjust_colourspace( IplImage ** img, const char *in, const char *out ) {
+  int code;
+  IplImage *nimg = NULL;
+
+  if ( !strcmp( in, out ) ) {
+    return 0;
+  }
+
+  if ( code = colour_mapping( in, out ), code < 0 ) {
+    char in4cc[5], out4cc[5];
+    to4cc( in4cc, in );
+    to4cc( out4cc, out );
+    die( "No colour mapping %s -> %s", in4cc, out4cc );
+  }
+
+  nimg = img_like( *img );
+  cvCvtColor( *img, nimg, code );
+  cvReleaseImage( img );
+  *img = nimg;
+
+  return 1;
+}
+
+static int
+adjust_size( IplImage ** img, CvSize size ) {
+  IplImage *nimg;
+
+  if ( ( *img )->width == size.width && ( *img )->height == size.height ) {
+    return 0;
+  }
+
+  nimg = img_new( size, ( *img )->depth, ( *img )->nChannels );
+  cvResize( *img, nimg, CV_INTER_CUBIC );
+  cvReleaseImage( img );
+  *img = nimg;
+
+  return 1;
+}
+
+static int
+make_like( IplImage ** img, const IplImage * ref ) {
+  CvSize size = cvSize( ref->width, ref->height );
+  return adjust_colourspace( img, ( *img )->channelSeq, ref->channelSeq ) +
+      adjust_size( img, size );
 }
 
 static void
@@ -206,23 +317,6 @@ usage( void ) {
   exit( 1 );
 }
 
-static IplImage *
-load_image( const char *filename ) {
-  IplImage *iraw = cvLoadImage( filename, CV_LOAD_IMAGE_ANYCOLOR );
-  IplImage *icooked = NULL;
-
-  if ( !iraw ) {
-    die( "Could not read image file %s", filename );
-  }
-
-  CvSize size = cvSize( iraw->width, iraw->height );
-  icooked = cvCreateImage( size, IPL_DEPTH_32F, iraw->nChannels );
-  cvConvert( iraw, icooked );
-  cvReleaseImage( &iraw );
-
-  return icooked;
-}
-
 int
 main( int argc, char **argv ) {
   int ch;
@@ -270,6 +364,8 @@ main( int argc, char **argv ) {
 
   img1 = load_image( argv[0] );
   img2 = load_image( argv[1] );
+
+  make_like( &img1, img2 );
 
   func( img1, img2, result, NULL );
 
