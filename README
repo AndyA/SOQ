@@ -9,3 +9,15 @@ Based - with thanks - on code found here:
 
 http://mehdi.rabah.free.fr/SSIM/
 
+Synopsis
+--------
+
+Usage: soq [options] <original> <version>
+
+Options:
+      --psnr      Perform PSNR analysis
+      --ssim      Perform SSIM analysis
+      --mse       Perform MSE analysis
+  -V, --version   See version number
+  -h, --help      See this text
+
