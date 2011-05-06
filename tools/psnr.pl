@@ -68,7 +68,7 @@ sub psnr {
      unless defined $pid;
 
     if ( $pid ) {
-      $child{$pid}++;
+      $child{$pid}  = $vid;
       $worker{$vid} = {
         pidfile => "$pidfile",
         ppid    => $pid,
@@ -111,31 +111,36 @@ sub psnr {
   CMP: while () {
     while ( ( my $gotpid = waitpid( -1, WNOHANG ) ) > 0 ) {
       print "Reaping $gotpid\n";
+      $worker{ $child{$gotpid} }{state} = 'done';
       delete $child{$gotpid};
     }
 
     for my $vid ( $ref, $env ) {
-      my $fn = sprintf $worker{$vid}{out}, $next + 50;
-      if ( -f $fn && $worker{$vid}{state} eq 'running' ) {
-        print "Pausing worker $worker{$vid}{pid}\n";
-        kill STOP => $worker{$vid}{pid};
-        $worker{$vid}{state} = 'stopped';
+      my $w = $worker{$vid};
+      next unless $w;
+
+      my ( $stop, $start )
+       = map { sprintf $w->{out}, $next + $_ } ( 50, 30 );
+
+      if ( -f $stop && $w->{state} eq 'running' ) {
+        print "Pausing worker $w->{pid}\n";
+        kill STOP => $w->{pid};
+        $w->{state} = 'stopped';
+      }
+      elsif ( !-f $start && $w->{state} eq 'stopped' ) {
+        print "Resuming worker $w->{pid}\n";
+        kill CONT => $w->{pid};
+        $w->{state} = 'running';
       }
     }
 
     my @f = grep { -f }
-     map { sprintf $_->{out}, $next } @worker{ $ref, $env };
+     map { sprintf $_->{out}, $next }
+     grep defined, @worker{ $ref, $env };
+
     last CMP unless @f || keys %child;
     unless ( @f == 2 ) {
       last CMP unless keys %child;
-      for my $w ( values %worker ) {
-        if ( $w->{state} ne 'running' ) {
-          print "Resuming worker $w->{pid}\n";
-          kill CONT => $w->{pid};
-          $w->{state} = 'running';
-        }
-      }
-      sleep 1;
       redo CMP;
     }
 
