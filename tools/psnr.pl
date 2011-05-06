@@ -144,15 +144,7 @@ sub psnr {
       redo CMP;
     }
 
-    my $rec = {};
-    for my $mode ( @mode ) {
-      my $rm = soq( "--$mode", @opt, @f );
-      while ( my ( $k, $v ) = each %$rm ) {
-        $rec->{"$mode.$k"} = $v;
-      }
-    }
-
-    push @data, $rec;
+    push @data, soq( ( map { "--$_" } @mode ), @opt, @f );
 
     unlink for @f;
     $next++;
