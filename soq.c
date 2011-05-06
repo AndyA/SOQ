@@ -299,8 +299,14 @@ ssim( IplImage * img1, IplImage * img2, result_cb cb, void *ctx ) {
 
 static void
 result( const char *name, double value, void *ctx ) {
-  ( void ) ctx;
   printf( "%s.%s: %0.4f\n", ( char * ) ctx, name, value );
+}
+
+static void
+nop( const char *name, double value, void *ctx ) {
+  ( void ) name;
+  ( void ) value;
+  ( void ) ctx;
 }
 
 static void
@@ -310,10 +316,21 @@ usage( void ) {
            "      --psnr            Perform PSNR analysis\n"
            "      --ssim            Perform SSIM analysis\n"
            "      --mse             Perform MSE analysis\n"
+           "  -B, --benchmark=N     Run analusis N times\n"
            "  -C, --colourspace=X   Convert to named colourspace (RGB/BGR/YUV)\n"
            "  -V, --version         See version number\n"
            "  -h, --help            See this text\n\n" );
   exit( 1 );
+}
+
+static unsigned long
+parse_int( const char *s ) {
+  char *endp;
+  unsigned long ul = strtoul( s, &endp, 10 );
+  if ( *endp || endp == s ) {
+    die( "Bad number: %s", s );
+  }
+  return ul;
 }
 
 int
@@ -321,6 +338,7 @@ main( int argc, char **argv ) {
   int ch;
   char *colourspace = NULL;
   int do_ssim = 0, do_psnr = 0, do_mse = 0;
+  unsigned long i, bm = 1;
 
   IplImage *img1 = NULL, *img2 = NULL;
 
@@ -331,12 +349,14 @@ main( int argc, char **argv ) {
     {"mse", no_argument, NULL, '\3'},
     {"colourspace", required_argument, NULL, 'C'},
     {"colorspace", required_argument, NULL, 'C'},
+    {"benchmark", required_argument, NULL, 'B'},
     {"version", no_argument, NULL, 'V'},
     {NULL, 0, NULL, 0}
   };
 
   while ( ch =
-          getopt_long( argc, argv, "hV\1\2\3C:", opts, NULL ), ch != -1 ) {
+          getopt_long( argc, argv, "hV\1\2\3B:C:", opts, NULL ),
+          ch != -1 ) {
     switch ( ch ) {
     case 'V':
       printf( "%s %s\n", PROG, VERSION );
@@ -349,6 +369,9 @@ main( int argc, char **argv ) {
       break;
     case '\3':
       do_mse++;
+      break;
+    case 'B':
+      bm = parse_int( optarg );
       break;
     case 'C':
       colourspace = optarg;
@@ -375,14 +398,21 @@ main( int argc, char **argv ) {
 
   make_like( &img1, img2 );
 
-  if ( do_psnr || !( do_ssim || do_mse ) ) {
-    psnr( img1, img2, result, "psnr" );
+  if ( bm > 1 ) {
+    printf( "Benchmark mode; looping %lu times\n", bm );
   }
-  if ( do_ssim ) {
-    ssim( img1, img2, result, "ssim" );
-  }
-  if ( do_mse ) {
-    mse( img1, img2, result, "mse" );
+
+  for ( i = 0; i < bm; i++ ) {
+    result_cb cb = i ? nop : result;
+    if ( do_psnr || !( do_ssim || do_mse ) ) {
+      psnr( img1, img2, cb, "psnr" );
+    }
+    if ( do_ssim ) {
+      ssim( img1, img2, cb, "ssim" );
+    }
+    if ( do_mse ) {
+      mse( img1, img2, cb, "mse" );
+    }
   }
 
   cvReleaseImage( &img1 );
