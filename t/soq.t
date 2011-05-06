@@ -110,8 +110,10 @@ sub soq {
   open my $ch, '-|', @cmd or die SOQ, " failed: $!\n";
   while ( <$ch> ) {
     chomp;
-    /^(\w+):\s*(\d+(?:\.\d+)?)$/ or die "Bad output line: $_\n";
-    $r{$1} = $2;
+    /^(.+?):\s*(\d+(?:\.\d+)?)$/ or die "Bad output line: $_\n";
+    my ( $k, $v ) = ( $1, $2 );
+    $k =~ s/(.*?)\.//;
+    $r{$k} = $v;
   }
   return \%r;
 }

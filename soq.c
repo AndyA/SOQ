@@ -300,7 +300,7 @@ ssim( IplImage * img1, IplImage * img2, result_cb cb, void *ctx ) {
 static void
 result( const char *name, double value, void *ctx ) {
   ( void ) ctx;
-  printf( "%s: %0.4f\n", name, value );
+  printf( "%s.%s: %0.4f\n", ( char * ) ctx, name, value );
 }
 
 static void
@@ -319,12 +319,10 @@ usage( void ) {
 int
 main( int argc, char **argv ) {
   int ch;
-  char *colourspace;
+  char *colourspace = NULL;
+  int do_ssim = 0, do_psnr = 0, do_mse = 0;
 
   IplImage *img1 = NULL, *img2 = NULL;
-
-  void ( *func ) ( IplImage * orig, IplImage * ver, result_cb cb,
-                   void *ctx ) = psnr;
 
   static struct option opts[] = {
     {"help", no_argument, NULL, 'h'},
@@ -344,13 +342,13 @@ main( int argc, char **argv ) {
       printf( "%s %s\n", PROG, VERSION );
       return 0;
     case '\1':
-      func = ssim;
+      do_ssim++;
       break;
     case '\2':
-      func = psnr;
+      do_psnr++;
       break;
     case '\3':
-      func = mse;
+      do_mse++;
       break;
     case 'C':
       colourspace = optarg;
@@ -377,7 +375,15 @@ main( int argc, char **argv ) {
 
   make_like( &img1, img2 );
 
-  func( img1, img2, result, NULL );
+  if ( do_psnr || !( do_ssim || do_mse ) ) {
+    psnr( img1, img2, result, "psnr" );
+  }
+  if ( do_ssim ) {
+    ssim( img1, img2, result, "ssim" );
+  }
+  if ( do_mse ) {
+    mse( img1, img2, result, "mse" );
+  }
 
   cvReleaseImage( &img1 );
   cvReleaseImage( &img2 );
