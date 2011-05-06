@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 
+use Data::Dumper;
 use Getopt::Long;
 use POSIX ":sys_wait_h";
 use Path::Class;
@@ -47,8 +48,9 @@ sub csv { join ',', map qq{"$_"}, @_ }
 
 sub psnr {
   my ( $ref, $env, @opt ) = @_;
-  my %child = ();
-  my %work  = ();
+  my %child  = ();
+  my %work   = ();
+  my %worker = ();
 
   my $base = dir( "psnr-$$" );
 
@@ -57,9 +59,9 @@ sub psnr {
     my $dir = dir( $base, $name );
     $dir->rmtree if -d "$dir";
     $dir->mkpath;
-    my $out = file( $dir, '%08d.bmp' );
-    my $log = file( $dir, 'ffmpeg.log' );
-    $work{$vid} = "$out";
+    my $out     = file( $dir, '%08d.bmp' );
+    my $log     = file( $dir, 'ffmpeg.log' );
+    my $pidfile = file( $dir, 'ffmpeg.pid' );
 
     my $pid = fork;
     die "Can't fork, won't fork: $!\n"
@@ -67,13 +69,42 @@ sub psnr {
 
     if ( $pid ) {
       $child{$pid}++;
+      $worker{$vid} = {
+        pidfile => "$pidfile",
+        ppid    => $pid,
+        state   => 'starting',
+        out     => "$out",
+      };
       next;
     }
 
-    extract_to( $vid, $out );
+    my $ffpid
+     = extract_to( $vid, $out, file( $dir, 'ffmpeg.log' )->stringify );
+    {
+      open my $ph, '>', "$pidfile" or die "Can't write $pidfile: $!\n";
+      print $ph "$ffpid\n";
+    }
+    wait;
+    die "ffmpeg failed: $?" if $?;
 
     exit;
   }
+
+  WAIT: {
+    sleep 1;
+    for my $w ( values %worker ) {
+      if ( -f $w->{pidfile} ) {
+        open my $ph, '<', $w->{pidfile}
+         or die "Can't read ", $w->{pidfile}, ": $!\n";
+        chomp( my $ffpid = <$ph> );
+        $w->{pid}   = $ffpid;
+        $w->{state} = 'running';
+      }
+    }
+    redo WAIT if grep { !exists $_->{pid} } values %worker;
+  }
+
+  #  print Dumper( \%worker );
 
   my @data = ();
   my $next = 1;
@@ -82,10 +113,28 @@ sub psnr {
       print "Reaping $gotpid\n";
       delete $child{$gotpid};
     }
-    my @f = grep { -f } map { sprintf $_, $next } @work{ $ref, $env };
+
+    for my $vid ( $ref, $env ) {
+      my $fn = sprintf $worker{$vid}{out}, $next + 50;
+      if ( -f $fn && $worker{$vid}{state} eq 'running' ) {
+        print "Pausing worker $worker{$vid}{pid}\n";
+        kill STOP => $worker{$vid}{pid};
+        $worker{$vid}{state} = 'stopped';
+      }
+    }
+
+    my @f = grep { -f }
+     map { sprintf $_->{out}, $next } @worker{ $ref, $env };
     last CMP unless @f || keys %child;
     unless ( @f == 2 ) {
       last CMP unless keys %child;
+      for my $w ( values %worker ) {
+        if ( $w->{state} ne 'running' ) {
+          print "Resuming worker $w->{pid}\n";
+          kill CONT => $w->{pid};
+          $w->{state} = 'running';
+        }
+      }
       sleep 1;
       redo CMP;
     }
@@ -122,7 +171,7 @@ sub soq {
 }
 
 sub extract_to {
-  my ( $vid, $out ) = @_;
+  my ( $vid, $out, $log ) = @_;
   my @cmd = (
     'ffmpeg',
     -i => "$vid",
@@ -131,7 +180,11 @@ sub extract_to {
     "$out"
   );
   print join( ' ', @cmd ), "\n";
-  system @cmd and die "ffmpeg failed: $?\n";
+  my $pid = fork;
+  die unless defined $pid;
+  open STDERR, '>', $log or die "Can't write $log: $!\n";
+  exec @cmd unless $pid;
+  return $pid;
 }
 
 # vim:ts=2:sw=2:sts=2:et:ft=perl
