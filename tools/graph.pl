@@ -69,7 +69,7 @@ sub graph {
   #  my %col = ( G => 'green' );
   for my $file ( @file ) {
     while ( my ( $k, $col ) = each %col ) {
-      plot_line( $svg, $xf, $data{$file}, "{psnr}{$k}", $col );
+      plot_line( $svg, $xf, $data{$file}, "{$opt{sel}}{$k}", $col );
     }
   }
 
@@ -90,7 +90,7 @@ sub from_pairs {
 sub nice_ceil {
   my $n   = shift;
   my @seq = ( 2, 2.5, 2 );
-  my $nn  = 1;
+  my $nn  = 0.001;
   while () {
     return $nn if $nn >= $n;
     my $factor = shift @seq;
