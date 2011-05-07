@@ -6,7 +6,6 @@ use warnings;
 use Data::Dumper;
 use Text::CSV_XS;
 use SVG;
-use SVG::TT::Graph::Line;
 use List::Util qw( min max sum );
 
 print graph( { sel => 'psnr' }, @ARGV )->xmlify;
@@ -158,35 +157,6 @@ sub plot_line {
     );
   }
 }
-
-#my @fields        = qw(Jan Feb Mar);
-#my @data_sales_02 = qw(12 45 21);
-#my @data_sales_03 = qw(15 30 40);
-
-#my $graph = SVG::TT::Graph::Line->new(
-#  {
-#    'height' => '500',
-#    'width'  => '300',
-#    'fields' => \@fields,
-#  }
-#);
-#$graph->compress( 0 );
-
-#$graph->add_data(
-#  {
-#    'data'  => \@data_sales_02,
-#    'title' => 'Sales 2002',
-#  }
-#);
-
-#$graph->add_data(
-#  {
-#    'data'  => \@data_sales_03,
-#    'title' => 'Sales 2003',
-#  }
-#);
-
-#print $graph->burn();
 
 sub put_path {
   my ( $h, $k, @p ) = @_;
