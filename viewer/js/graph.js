@@ -1,11 +1,10 @@
 (function($) {
-
   var methods = {
     init: function(options) {
       var data = {
         settings: {},
         ds: [],
-        show: []
+        meta: []
       };
 
       if (options) {
@@ -18,13 +17,15 @@
     addSeries: function(ds) {
       var data = this.data('graph');
       data.ds.push(ds);
-      data.show.push(1.0);
+      data.meta.push({
+        show: 1.0
+      });
       return this;
     },
     showSeries: function(n, show) {
       var data = this.data('graph');
       if (show === undefined) show = 1.0;
-      data.show[n] = show;
+      data.meta[n].show = show;
       return this;
     },
     colourForPath: function(path) {
@@ -108,9 +109,10 @@
       ctx.fillStyle = 'rgb(240, 240, 240)';
       ctx.fillRect(ga.x, ga.y, ga.w, ga.h);
       for (var i in data.ds) {
-        if (data.show[i] == 0) continue;
+        var meta = data.meta[i];
+        if (meta.show == 0) continue;
         data.ds[i].eachSeries(function(path, series) {
-          var pcol = $this.graph('colourForPath', path).alpha(data.show[i]);
+          var pcol = $this.graph('colourForPath', path).alpha(meta.show);
           var scaled = series.scaledInstance(cav.width / 4);
           var pts = scaled.getPoints();
           var sc = scaled.getScale();
