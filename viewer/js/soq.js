@@ -14,6 +14,7 @@ $(function() {
       console.log("data loaded");
       $graph.graph('addSeries', ds.get('media/cycling/q200.csv').get(type));
       $graph.graph('addSeries', ds.get('media/cycling/q1600.csv').get(type));
+      $graph.graph('showSeries', 1, 0.3);
       $graph.graph('render');
     });
   }

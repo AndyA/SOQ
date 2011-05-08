@@ -21,13 +21,10 @@ Colour.prototype = {
     }
     return new Colour(rgba);
   },
-  channel: function(n, vv) {
+  alpha: function(dv) {
     return this.adjusted(function(i, v) {
-      return i == n ? vv : v;
+      return i == 3 ? v * dv : v;
     });
-  },
-  alpha: function(v) {
-    return this.channel(3, v);
   },
   clip: function() {
     var lim = [255, 255, 255, 1.0];
