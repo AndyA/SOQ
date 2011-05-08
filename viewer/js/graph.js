@@ -69,11 +69,12 @@
     },
     getGraphArea: function() {
       var cav = this.get(0);
+      var inset = 10;
       return {
-        x: 0,
-        y: 0,
-        w: cav.width,
-        h: cav.height
+        x: inset,
+        y: inset,
+        w: cav.width - inset * 2,
+        h: cav.height - inset * 2
       };
     },
     niceCeiling: function(n) {
@@ -149,6 +150,14 @@
           ctx.stroke();
         });
       }
+
+      ctx.strokeStyle = new Colour(0, 0, 0).css();
+      ctx.beginPath();
+      ctx.moveTo(ga.x, ga.y);
+      ctx.lineTo(ga.x, ga.y + ga.h);
+      ctx.lineTo(ga.x + ga.w, ga.y + ga.h);
+      ctx.stroke();
+
       ctx.restore();
       return this;
     }
