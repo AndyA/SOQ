@@ -105,7 +105,7 @@
       var ctx = cav.getContext('2d');
       var ga = this.graph('getGraphArea');
       var $this = this;
-      ctx.fillStyle = 'rgb(240, 240, 240)';
+      ctx.fillStyle = new Colour(240, 240, 240).css();
       ctx.fillRect(ga.x, ga.y, ga.w, ga.h);
       for (var i in data.ds) {
         if (data.show[i] == 0) continue;
