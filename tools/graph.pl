@@ -30,7 +30,7 @@ sub graph {
   for my $file ( @file ) {
     my $d = read_data( $file );
     {
-      my ( undef, undef, $dd ) = reduce_data( $d, 1024 );
+      my ( undef, undef, $dd ) = reduce_data( $d, 250 );
       $raw{$file} = $dd;
     }
     {
