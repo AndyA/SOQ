@@ -3,6 +3,13 @@ function Colour() {
   this.set.apply(this, arguments);
 }
 
+$.extend(Colour, {
+  RED: 0,
+  GREEN: 1,
+  BLUE: 2,
+  ALPHA: 3
+});
+
 Colour.prototype = {
   set: function() {
     if (arguments.length) {
@@ -40,7 +47,7 @@ Colour.prototype = {
     });
   },
   alpha: function(dv) {
-    return this.adjust(dv, 0, 3);
+    return this.adjust(dv, 0, Colour.ALPHA);
   },
   brightness: function(n, c) {
     return this.adjust(1, n, c);
