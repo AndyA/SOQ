@@ -33,18 +33,23 @@ Colour.prototype = {
       return i < 3 ? Math.floor(vv) : vv;
     });
   },
-  adjust: function(n) {
+  brightness: function(n) {
     return this.adjusted(function(i, v) {
       return i < 3 ? v + n : v;
     });
   },
+  contrast: function(r) {
+    return this.adjusted(function(i, v) {
+      return i < 3 ? v * r : v;
+    });
+  },
   lighter: function(n) {
     if (n === undefined) n = 16;
-    return this.adjust(n);
+    return this.brightness(n);
   },
   darker: function(n) {
     if (n === undefined) n = 16;
-    return this.adjust(-n);
+    return this.brightness(-n);
   },
   mono: function(w) {
     // http://en.wikipedia.org/wiki/Luminance_(relative)
@@ -62,7 +67,7 @@ Colour.prototype = {
       return v * (1 - r) + c.rgba[i] * r;
     });
   },
-  saturate: function(r) {
+  saturation: function(r) {
     return this.mono().mix(this, r);
   },
   css: function() {
