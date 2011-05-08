@@ -114,7 +114,7 @@
       var ga = this.graph('getGraphArea');
       var $this = this;
       ctx.save();
-      ctx.fillStyle = 'rgb(240, 240, 240)';
+      ctx.fillStyle = new Colour(240, 240, 240).css();
       ctx.fillRect(ga.x, ga.y, ga.w, ga.h);
       for (var i in data.ds) {
         var meta = data.meta[i];

@@ -1,0 +1,8 @@
+{
+   "datasets" : [
+      {
+         "name" : "Cycling",
+         "data" : "../media/cycling/q.json"
+      }
+   ]
+}
