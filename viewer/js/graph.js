@@ -59,6 +59,14 @@
         h: h
       };
     },
+    getAxisScales: function() {
+      var b = this.graph('getBounds');
+      var y = this.graph('niceCeiling', b.h);
+      return {
+        x: b.w,
+        y: y
+      };
+    },
     getGraphArea: function() {
       var cav = this.get(0);
       return {
@@ -80,9 +88,8 @@
     },
     getTransform: function() {
       var ga = this.graph('getGraphArea');
-      var b = this.graph('getBounds');
-      var gh = this.graph('niceCeiling', b.h);
-      var xf = [ga.w / b.w, 0, 0, -ga.h / gh, ga.x, ga.h + ga.y];
+      var ax = this.graph('getAxisScales');
+      var xf = [ga.w / ax.x, 0, 0, -ga.h / ax.y, ga.x, ga.h + ga.y];
       return xf;
     },
     lineMaker: function(ctx, scale) {
@@ -106,6 +113,7 @@
       var ctx = cav.getContext('2d');
       var ga = this.graph('getGraphArea');
       var $this = this;
+      ctx.save();
       ctx.fillStyle = 'rgb(240, 240, 240)';
       ctx.fillRect(ga.x, ga.y, ga.w, ga.h);
       for (var i in data.ds) {
@@ -141,6 +149,7 @@
           ctx.stroke();
         });
       }
+      ctx.restore();
       return this;
     }
   };
