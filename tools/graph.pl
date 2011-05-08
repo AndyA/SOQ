@@ -3,12 +3,17 @@
 use strict;
 use warnings;
 
-use Data::Dumper;
-use Text::CSV_XS;
-use SVG;
-use List::Util qw( min max sum );
+use lib qw( lib );
 
-print graph( { sel => 'psnr' }, @ARGV )->xmlify;
+use Data::Dumper;
+use Data::Reshape qw( reshape );
+use JSON::XS;
+use List::Util qw( min max sum );
+use Path::Class;
+use SVG;
+use Text::CSV_XS;
+
+print graph( { sel => 'ssim' }, @ARGV )->xmlify;
 
 sub graph {
   my ( $opt, @file ) = @_;
@@ -20,13 +25,38 @@ sub graph {
     %$opt
   );
   my %data;
+  my %raw;
   my ( $dmax, $dmin );
   for my $file ( @file ) {
     my $d = read_data( $file );
-    my ( $min, $max, $dd ) = reduce_data( $d, $opt{maxpt} );
-    $data{$file} = $dd;
-    $dmin = min( grep defined, $dmin, $min );
-    $dmax = max( grep defined, $dmax, $max );
+    {
+      my ( undef, undef, $dd ) = reduce_data( $d, 1024 );
+      $raw{$file} = $dd;
+    }
+    {
+      my ( $min, $max, $dd ) = reduce_data( $d, $opt{maxpt} );
+      $data{$file} = $dd;
+      $dmin = min( grep defined, $dmin, $min );
+      $dmax = max( grep defined, $dmax, $max );
+    }
+  }
+
+  my $cooked = reshape {
+    s{ ^ ( \{ .+? \} ) ( \[ \d+ \] ) ( \{ .+? \} ) ( \{ .+? \} ) }
+    {$1$3$4$2}x;
+  }
+  \%raw;
+
+  {
+    # Write the json file ... somewhere :)
+    my $json = common_prefix( @file ) . '.pretty.json';
+    open my $jh, '>', $json or die "Can't write $json: $!\n";
+    print $jh JSON::XS->new->pretty->encode( $cooked );
+  }
+  {
+    my $json = common_prefix( @file ) . '.json';
+    open my $jh, '>', $json or die "Can't write $json: $!\n";
+    print $jh JSON::XS->new->encode( $cooked );
   }
 
   my $vscale = nice_ceil( $dmax );
@@ -73,6 +103,17 @@ sub graph {
   }
 
   return $svg;
+}
+
+sub common_prefix {
+  my @s = @_;
+  for my $pos ( 1 .. min( map length, @s ) - 1 ) {
+    for my $s ( @s ) {
+      return substr( $s, 0, $pos - 1 )
+       unless substr( $s[0], 0, $pos ) eq substr( $s, 0, $pos );
+    }
+  }
+  return '';
 }
 
 sub from_pairs {
@@ -222,7 +263,7 @@ sub reduce_data {
         my @sl = @_;
 
         my ( $min, $max, $avg )
-         = ( min( @sl ), max( @sl ), sum( @sl ) / @sl );
+         = ( 0 + min( @sl ), 0 + max( @sl ), sum( @sl ) / @sl );
         $dmin = min( grep defined, $dmin, $min );
         $dmax = max( grep defined, $dmax, $max );
 
