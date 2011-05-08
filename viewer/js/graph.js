@@ -95,10 +95,13 @@
       var data = this.data('graph');
       var cav = this.get(0);
       var ctx = cav.getContext('2d');
+      var ga = this.graph('getGraphArea');
       var $this = this;
       var col = function(ar, alpha) {
         return 'rgba(' + ar.concat([alpha]).join(', ') + ')';
       }
+      ctx.fillStyle = 'rgb(240, 240, 240)';
+      ctx.fillRect(ga.x, ga.y, ga.w, ga.h);
       for (var i in data.ds) {
         data.ds[i].eachSeries(function(path, series) {
           var scaled = series.scaledInstance(cav.width / 4);
