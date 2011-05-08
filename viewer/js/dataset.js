@@ -14,19 +14,19 @@ DataSeries.prototype = {
   eachPoint: function(cb, sel) {
     var d = this.data;
     if (this.isComplex()) {
-      if (sel === null) {
-        for (i in d) {
+      if (sel === undefined) {
+        for (var i in d) {
           cb(d[i]);
         }
       } else {
-        for (i in d) {
+        for (var i in d) {
           cb(d[i][sel]);
         }
       }
     }
     else {
-      if (sel === null) {
-        for (i in d) {
+      if (sel === undefined) {
+        for (var i in d) {
           var dp = d[i];
           cb({
             min: dp,
@@ -35,7 +35,7 @@ DataSeries.prototype = {
           });
         }
       } else {
-        for (i in d) {
+        for (var i in d) {
           cb(d[i]);
         }
       }
@@ -46,7 +46,7 @@ DataSeries.prototype = {
     cb(path, this);
   },
   getPoints: function(sel) {
-    if ((sel === null && this.isComplex()) || (sel !== null && !this.isComplex())) {
+    if ((sel === undefined && this.isComplex()) || (sel !== undefined && !this.isComplex())) {
       return this.data;
     }
     var key = sel || 'all';
@@ -93,7 +93,7 @@ DataSet.prototype = {
   },
   names: function() {
     var n = [];
-    for (nn in this.data) {
+    for (var nn in this.data) {
       if (this.data.hasOwnProperty(nn)) {
         n.push(nn);
       }
@@ -110,8 +110,26 @@ DataSet.prototype = {
   eachSeries: function(cb, prefix) {
     var path = prefix ? prefix.concat([this.name]) : [this.name];
     var nn = this.names();
-    for (i in nn) {
+    for (var i in nn) {
       this.get(nn[i]).eachSeries(cb, path);
     }
+  },
+  getBounds: function() {
+    var bounds;
+    this.eachSeries(function(path, series) {
+      sb = series.getBounds();
+      if (bounds) {
+        bounds.min = Math.min(bounds.min, sb.min);
+        bounds.max = Math.max(bounds.max, sb.max);
+        bounds.len = Math.max(bounds.len, sb.len);
+      } else {
+        bounds = {
+          min: sb.min,
+          max: sb.max,
+          len: sb.len
+        };
+      }
+    });
+    return bounds;
   }
 }
