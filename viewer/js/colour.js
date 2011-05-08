@@ -21,11 +21,6 @@ Colour.prototype = {
     }
     return new Colour(rgba);
   },
-  alpha: function(dv) {
-    return this.adjusted(function(i, v) {
-      return i == 3 ? v * dv : v;
-    });
-  },
   clip: function() {
     var lim = [255, 255, 255, 1.0];
     return this.adjusted(function(i, v) {
@@ -33,23 +28,33 @@ Colour.prototype = {
       return i < 3 ? Math.floor(vv) : vv;
     });
   },
-  brightness: function(n) {
+  adjust: function(f, s, c) {
+    if (! (f instanceof Array)) f = [f, f, f, f];
+    if (! (s instanceof Array)) s = [s, s, s, s];
+    var pick = function(i) {
+      if (c === undefined) return i < 3
+      return i == c;
+    }
     return this.adjusted(function(i, v) {
-      return i < 3 ? v + n : v;
+      return pick(i) ? v * f[i] + s[i] : v;
     });
   },
-  contrast: function(r) {
-    return this.adjusted(function(i, v) {
-      return i < 3 ? v * r : v;
-    });
+  alpha: function(dv) {
+    return this.adjust(dv, 0, 3);
   },
-  lighter: function(n) {
-    if (n === undefined) n = 16;
-    return this.brightness(n);
+  brightness: function(n, c) {
+    return this.adjust(1, n, c);
   },
-  darker: function(n) {
+  contrast: function(r, c) {
+    return this.adjust(r, 0, c);
+  },
+  lighter: function(n, c) {
     if (n === undefined) n = 16;
-    return this.brightness(-n);
+    return this.brightness(n, c);
+  },
+  darker: function(n, c) {
+    if (n === undefined) n = 16;
+    return this.brightness(-n, c);
   },
   mono: function(w) {
     // http://en.wikipedia.org/wiki/Luminance_(relative)
@@ -62,13 +67,13 @@ Colour.prototype = {
       return i < 3 ? y : v;
     });
   },
-  mix: function(c, r) {
+  mix: function(other, r, c) {
     return this.adjusted(function(i, v) {
-      return v * (1 - r) + c.rgba[i] * r;
+      return i < 3 && (c === undefined || c == i) ? v * (1 - r) + other.rgba[i] * r : v;
     });
   },
-  saturation: function(r) {
-    return this.mono().mix(this, r);
+  saturation: function(r, c) {
+    return this.mono().mix(this, r, c);
   },
   css: function() {
     return 'rgba(' + this.clip().rgba.join(', ') + ")";
