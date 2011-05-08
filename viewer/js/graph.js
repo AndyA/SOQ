@@ -22,13 +22,13 @@
     colourForPath: function(path) {
       switch (path[path.length - 1]) {
       case 'R':
-        return ([255, 0, 0]);
+        return new Colour(255, 0, 0);
       case 'G':
-        return ([0, 255, 0]);
+        return new Colour(0, 200, 0);
       case 'B':
-        return ([0, 0, 255]);
+        return new Colour(0, 0, 255);
       default:
-        return ([0, 0, 0]);
+        return new Colour(0, 0, 0);
       }
     },
     getBounds: function() {
@@ -97,13 +97,11 @@
       var ctx = cav.getContext('2d');
       var ga = this.graph('getGraphArea');
       var $this = this;
-      var col = function(ar, alpha) {
-        return 'rgba(' + ar.concat([alpha]).join(', ') + ')';
-      }
       ctx.fillStyle = 'rgb(240, 240, 240)';
       ctx.fillRect(ga.x, ga.y, ga.w, ga.h);
       for (var i in data.ds) {
         data.ds[i].eachSeries(function(path, series) {
+          var pcol = $this.graph('colourForPath', path);
           var scaled = series.scaledInstance(cav.width / 4);
           var pts = scaled.getPoints();
           var sc = scaled.getScale();
@@ -118,8 +116,9 @@
               lm(jj, pts[jj]['min']);
             }
             ctx.closePath();
-            ctx.fillStyle = col($this.graph('colourForPath', path), 0.3);
-            ctx.strokeStyle = col($this.graph('colourForPath', path), 0.3);
+            var pcolf = pcol.alpha(0.2).lighter(30);
+            ctx.fillStyle = pcolf.css();
+            ctx.strokeStyle = pcolf.css();
             ctx.fill();
           }
           ctx.beginPath();
@@ -127,7 +126,7 @@
           for (var j in pts) {
             lm(j, pts[j]['avg']);
           }
-          ctx.strokeStyle = col($this.graph('colourForPath', path), 1.0);
+          ctx.strokeStyle = pcol.css();
           ctx.stroke();
         });
       }
