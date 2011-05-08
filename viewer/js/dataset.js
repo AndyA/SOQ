@@ -1,6 +1,7 @@
-function DataSeries(name, data) {
+function DataSeries(name, data, scale) {
   this.ar = {};
   this.name = name;
+  this.scale = (scale === undefined) ? 1 : scale;
   if (data) this.data = data;
 }
 
@@ -69,6 +70,33 @@ DataSeries.prototype = {
       };
     }
     return this.bounds;
+  },
+  halfScale: function() {
+    if (!this.hs) {
+      var pts = this.getPoints();
+      var npts = [];
+      for (var i = 0; i < pts.length; i += 2) {
+        var ii = i + 1;
+        if (ii < pts.length) {
+          npts.push({
+            min: Math.min(pts[i].min, pts[ii].min),
+            max: Math.max(pts[i].max, pts[ii].max),
+            avg: (pts[i].avg + pts[ii].avg) / 2
+          });
+        } else {
+          npts.push(pts[i]);
+        }
+      }
+      this.hs = new DataSeries(this.name, npts, this.scale * 2);
+    }
+    return this.hs;
+  },
+  scaledInstance: function(maxPoints) {
+    if (this.data.length <= maxPoints) return this;
+    return this.halfScale().scaledInstance(maxPoints);
+  },
+  getScale: function() {
+    return this.scale;
   }
 }
 
