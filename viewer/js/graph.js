@@ -76,12 +76,12 @@
       var xf = [ga.w / b.w, 0, 0, -ga.h / gh, ga.x, ga.h + ga.y];
       return xf;
     },
-    lineMaker: function(ctx) {
+    lineMaker: function(ctx, scale) {
       var xf = this.graph('getTransform');
       var first = true;
       return function(x, y) {
-        var xx = x * xf[0] + y * xf[2] + xf[4];
-        var yy = x * xf[1] + y * xf[3] + xf[5];
+        var xx = scale * x * xf[0] + y * xf[2] + xf[4];
+        var yy = scale * x * xf[1] + y * xf[3] + xf[5];
         if (first) {
           ctx.moveTo(xx, yy);
           first = false;
@@ -101,10 +101,12 @@
       }
       for (var i in data.ds) {
         data.ds[i].eachSeries(function(path, series) {
-          var pts = series.getPoints();
-          if (series.isComplex()) {
+          var scaled = series.scaledInstance(cav.width / 4);
+          var pts = scaled.getPoints();
+          var sc = scaled.getScale();
+          if (scaled.isComplex()) {
             ctx.beginPath();
-            var lm = $this.graph('lineMaker', ctx);
+            var lm = $this.graph('lineMaker', ctx, sc);
             for (var j in pts) {
               lm(j, pts[j]['max']);
             }
@@ -118,7 +120,7 @@
             ctx.fill();
           }
           ctx.beginPath();
-          var lm = $this.graph('lineMaker', ctx);
+          var lm = $this.graph('lineMaker', ctx, sc);
           for (var j in pts) {
             lm(j, pts[j]['avg']);
           }
