@@ -126,9 +126,11 @@
             y: ny
           },
           render: function() {
+            ctx.fillStyle = new Colour(255, 255, 255).css();
+            ctx.fillRect(0, 0, cav.width, cav.height);
             ctx.fillStyle = new Colour(240, 240, 240).css();
-            ctx.strokeStyle = new Colour(200, 200, 200).css();
             ctx.fillRect(this.paper.x, this.paper.y, this.paper.w, this.paper.h);
+            ctx.strokeStyle = new Colour(200, 200, 200).css();
             for (i = 0; i <= nyTicks; i++) {
               x = this.paper.x;
               y = this.paper.y + paperHeight - i * paperHeight / nyTicks;

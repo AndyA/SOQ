@@ -34,5 +34,10 @@ body, html, #body {
 #body {
   position: absolute;
   width: 100%;
-  top: 100px;
+  top: 70px;
+  padding: 1em;
+}
+
+#controls a {
+  color: red;
 }
