@@ -9,24 +9,6 @@ body, html, #body {
   padding: 0;
 }
 
-table.mux {
-  margin:1em 0 1em;
-  font-size: 0.9em;
-/*  width: 100%;*/
-  text-align: left;
-  border: 0.1em solid #bbb;
-}
-
-table.mux th {
-  background-color: #eee;
-  padding: 0.5em;
-}
-
-table.mux td {
-  padding: 0.5em;
-  vertical-align: top;
-}
-
 #heading {
   background-color: #444;
   background-repeat: no-repeat;
