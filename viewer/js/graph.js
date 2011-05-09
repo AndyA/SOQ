@@ -72,20 +72,81 @@
     getLayout: function() {
       var data = this.data('graph');
       if (!data.layout) {
+        var cav = this.get(0);
+        var ctx = cav.getContext('2d');
+        var nf = new NumberFormatter();
+        var tc = new Timecode();
+        var lh = new LayoutHelper(ctx);
         var gb = this.graph('getBounds');
         var ny = this.graph('niceCeiling', gb.h);
-        var cav = this.get(0);
         var inset = 10;
+
+        // Top edge
+        var insetTop = 10;
+
+        // Bottom edge
+        var insetBottom = 10;
+
+        var paperHeight = cav.height - insetTop - insetBottom;
+
+        // Left edge
+        var nyTicks = this.graph('niceCeiling', paperHeight / 40);
+        var yText = [];
+        for (var i = 0; i <= nyTicks; i++) {
+          var v = i * ny / nyTicks;
+          yText.push(nf.format(v));
+        }
+
+        var insetLeft = lh.textBoundingMetrics(yText).width + 12;
+
+        // Right edge
+        var insetRight = 10;
+        var paperWidth = cav.width - insetLeft - insetRight;
+
         data.layout = {
           paper: {
-            x: inset,
-            y: inset,
-            w: cav.width - inset * 2,
-            h: cav.height - inset * 2
+            x: insetLeft,
+            y: insetTop,
+            w: cav.width - insetLeft - insetRight,
+            h: paperHeight
           },
           data: {
             x: gb.w,
             y: ny
+          },
+          render: function() {
+            var i, x, y;
+            ctx.fillStyle = new Colour(240, 240, 240).css();
+            ctx.strokeStyle = new Colour(200, 200, 200).css();
+            ctx.fillRect(this.paper.x, this.paper.y, this.paper.w, this.paper.h);
+            for (i = 0; i <= nyTicks; i++) {
+              x = this.paper.x;
+              y = this.paper.y + this.paper.h - i * paperHeight / nyTicks;
+              ctx.beginPath();
+              ctx.moveTo(x, y);
+              ctx.lineTo(x + paperWidth, y);
+              ctx.stroke();
+            }
+            return function() {
+              ctx.strokeStyle = new Colour(0, 0, 0).css();
+              ctx.beginPath();
+              ctx.moveTo(this.paper.x, this.paper.y);
+              ctx.lineTo(this.paper.x, this.paper.y + this.paper.h);
+              ctx.lineTo(this.paper.x + this.paper.w, this.paper.y + this.paper.h);
+              ctx.stroke();
+              // Left edge
+              ctx.textBaseline = 'alphabetic';
+              ctx.fillRect = new Colour(0, 0, 0).css();
+              for (i = 0; i <= nyTicks; i++) {
+                x = this.paper.x;
+                y = this.paper.y + this.paper.h - i * paperHeight / nyTicks;
+                ctx.beginPath();
+                ctx.moveTo(x - 4, y);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                ctx.fillText(yText[i], 4, y);
+              }
+            }
           }
         };
       }
@@ -114,31 +175,26 @@
         }
       }
     },
-    renderPaper: function(cav, ctx, layout) {
-      ctx.fillStyle = new Colour(240, 240, 240).css();
-      ctx.fillRect(layout.paper.x, layout.paper.y, layout.paper.w, layout.paper.h);
-      // Deferred portion: draw after the graph data layer
-      return function() {
-        ctx.strokeStyle = new Colour(0, 0, 0).css();
-        ctx.beginPath();
-        ctx.moveTo(layout.paper.x, layout.paper.y);
-        ctx.lineTo(layout.paper.x, layout.paper.y + layout.paper.h);
-        ctx.lineTo(layout.paper.x + layout.paper.w, layout.paper.y + layout.paper.h);
-        ctx.stroke();
-      }
-    },
     withGraphArea: function(cb) {
       var cav = this.get(0);
       var ctx = cav.getContext('2d');
-      var layout = this.graph('getLayout');
-
       ctx.save();
+      var layout = this.graph('getLayout');
 
       // Make lines with integer coordinates line up on pixel boundaries.
       ctx.translate(0.5, 0.5);
-      var after = this.graph('renderPaper', cav, ctx, layout);
+
+      ctx.save();
+      var after = layout.render.apply(layout);
+      ctx.restore();
+
+      ctx.save();
       cb.apply(this, [cav, ctx, layout]);
-      after.apply(this);
+      ctx.restore();
+
+      ctx.save();
+      after.apply(layout);
+      ctx.restore();
 
       ctx.restore();
     },
