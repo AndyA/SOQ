@@ -108,57 +108,73 @@
         }
       }
     },
-    render: function() {
-      var data = this.data('graph');
+    renderPaper: function(cav, ctx, ga) {
+      ctx.fillStyle = new Colour(240, 240, 240).css();
+      ctx.fillRect(ga.x, ga.y, ga.w, ga.h);
+      // Deferred portion: draw after the graph data layer
+      return function() {
+        ctx.strokeStyle = new Colour(0, 0, 0).css();
+        ctx.beginPath();
+        ctx.moveTo(ga.x, ga.y);
+        ctx.lineTo(ga.x, ga.y + ga.h);
+        ctx.lineTo(ga.x + ga.w, ga.y + ga.h);
+        ctx.stroke();
+      }
+    },
+    withGraphArea: function(cb) {
       var cav = this.get(0);
       var ctx = cav.getContext('2d');
       var ga = this.graph('getGraphArea');
-      var $this = this;
+
       ctx.save();
-      ctx.fillStyle = new Colour(240, 240, 240).css();
-      ctx.fillRect(ga.x, ga.y, ga.w, ga.h);
-      for (var i in data.ds) {
-        var meta = data.meta[i];
-        if (meta.show == 0) continue;
-        data.ds[i].eachSeries(function(path, series) {
-          var pcol = $this.graph('colourForPath', path).alpha(meta.show);
-          var scaled = series.scaledInstance(cav.width / 4);
-          var pts = scaled.getPoints();
-          var sc = scaled.getScale();
-          if (scaled.isComplex()) {
+
+      // Make lines with integer coordinates line up on pixel boundaries.
+      ctx.translate(0.5, 0.5);
+      var after = this.graph('renderPaper', cav, ctx, ga);
+      cb.apply(this, [cav, ctx, ga]);
+      after.apply(this);
+
+      ctx.restore();
+    },
+    render: function() {
+      var data = this.data('graph');
+      var $this = this;
+      this.graph('withGraphArea', function(cav, ctx, ga) {
+        for (var i in data.ds) {
+          var meta = data.meta[i];
+          if (meta.show == 0) continue;
+          data.ds[i].eachSeries(function(path, series) {
+            var pcol = $this.graph('colourForPath', path).alpha(meta.show);
+            var scaled = series.scaledInstance(cav.width / 4);
+            var pts = scaled.getPoints();
+            var sc = scaled.getScale();
+            if (scaled.isComplex()) {
+              ctx.beginPath();
+              var lm = $this.graph('lineMaker', ctx, sc);
+              for (var j in pts) {
+                lm(j, pts[j]['max']);
+              }
+              for (var j in pts) {
+                var jj = pts.length - 1 - j;
+                lm(jj, pts[jj]['min']);
+              }
+              ctx.closePath();
+              var pcolf = pcol.alpha(0.2).lighter(30);
+              ctx.fillStyle = pcolf.css();
+              ctx.strokeStyle = pcolf.css();
+              ctx.fill();
+            }
             ctx.beginPath();
             var lm = $this.graph('lineMaker', ctx, sc);
             for (var j in pts) {
-              lm(j, pts[j]['max']);
+              lm(j, pts[j]['avg']);
             }
-            for (var j in pts) {
-              var jj = pts.length - 1 - j;
-              lm(jj, pts[jj]['min']);
-            }
-            ctx.closePath();
-            var pcolf = pcol.alpha(0.2).lighter(30);
-            ctx.fillStyle = pcolf.css();
-            ctx.strokeStyle = pcolf.css();
-            ctx.fill();
-          }
-          ctx.beginPath();
-          var lm = $this.graph('lineMaker', ctx, sc);
-          for (var j in pts) {
-            lm(j, pts[j]['avg']);
-          }
-          ctx.strokeStyle = pcol.css();
-          ctx.stroke();
-        });
-      }
+            ctx.strokeStyle = pcol.css();
+            ctx.stroke();
+          });
+        }
 
-      ctx.strokeStyle = new Colour(0, 0, 0).css();
-      ctx.beginPath();
-      ctx.moveTo(ga.x, ga.y);
-      ctx.lineTo(ga.x, ga.y + ga.h);
-      ctx.lineTo(ga.x + ga.w, ga.y + ga.h);
-      ctx.stroke();
-
-      ctx.restore();
+      });
       return this;
     }
   };

@@ -34,17 +34,27 @@ sub cook {
     }
     \%raw
   );
+  my $orig_len = get_length( $cooked );
 
-  my $gen = 1;
+  my $scale = 1;
   while () {
     my $len = get_length( $cooked );
     last if $len < $opt->{minpts};
-    my $json = file( $opt->{outdir}, "g${gen}.json" );
+    my $json = file( $opt->{outdir}, "g${scale}.json" );
     print "Writing $json ($len points)\n";
     open my $jh, '>', "$json" or die "Can't write $json: $!\n";
-    print $jh JSON::XS->new->pretty->encode( $cooked );
+    print $jh JSON::XS->new->pretty->encode(
+      {
+        meta => {
+          scale  => $scale,
+          title  => 'My lovely data',
+          length => $orig_len,
+        },
+        data => $cooked
+      }
+    );
     $cooked = half_scale( $cooked );
-    $gen++;
+    $scale *= 2;
   }
 }
 

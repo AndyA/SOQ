@@ -1,7 +1,7 @@
-function DataSeries(name, data, scale) {
+function DataSeries(name, meta, data) {
   this.ar = {};
   this.name = name;
-  this.scale = (scale === undefined) ? 1 : scale;
+  this.meta = meta;
   if (data) this.data = data;
 }
 
@@ -66,7 +66,7 @@ DataSeries.prototype = {
       this.bounds = {
         min: Math.min.apply(Math, this.getPoints('min')),
         max: Math.max.apply(Math, this.getPoints('max')),
-        len: this.data.length
+        len: this.meta.length
       };
     }
     return this.bounds;
@@ -87,7 +87,11 @@ DataSeries.prototype = {
           npts.push(pts[i]);
         }
       }
-      this.hs = new DataSeries(this.name, npts, this.scale * 2);
+      var newmeta = $.extend({},
+      this.meta, {
+        scale: this.meta.scale * 2
+      });
+      this.hs = new DataSeries(this.name, newmeta, npts);
     }
     return this.hs;
   },
@@ -96,25 +100,30 @@ DataSeries.prototype = {
     return this.halfScale().scaledInstance(maxPoints);
   },
   getScale: function() {
-    return this.scale;
+    return this.meta.scale;
   }
 }
 
-function DataSet(name, data) {
+function DataSet(name, meta, data) {
   this.name = name;
+  if (meta) this.setMeta(meta);
   if (data) this.setData(data);
 }
 
 DataSet.prototype = {
   load: function(url, cb) {
     var $this = this;
-    $.getJSON(url, function(data) {
-      $this.setData(data);
+    $.getJSON(url, function(d) {
+      $this.setMeta(d.meta);
+      $this.setData(d.data);
       cb.apply($this);
     });
   },
   setData: function(data) {
     this.data = data;
+  },
+  setMeta: function(meta) {
+    this.meta = meta;
   },
   isSeries: function() {
     return false;
@@ -131,7 +140,8 @@ DataSet.prototype = {
   get: function(name) {
     var d = this.data[name];
     if (d) {
-      return d instanceof Array ? new DataSeries(name, d) : new DataSet(name, d);
+      if (d instanceof Array) return new DataSeries(name, this.meta, d);
+      return new DataSet(name, this.meta, d);
     }
     throw "No such element in dataset: " + name;
   },
