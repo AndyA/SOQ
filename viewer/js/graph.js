@@ -4,7 +4,8 @@
       var data = {
         settings: {},
         ds: [],
-        meta: []
+        meta: [],
+        fps: 25
       };
 
       if (options) {
@@ -33,7 +34,7 @@
       case 'R':
         return new Colour(255, 0, 0);
       case 'G':
-        return new Colour(0, 200, 0);
+        return new Colour(0, 128, 0);
       case 'B':
         return new Colour(0, 0, 255);
       default:
@@ -75,33 +76,43 @@
         var cav = this.get(0);
         var ctx = cav.getContext('2d');
         var nf = new NumberFormatter();
-        var tc = new Timecode();
+        var tc = new Timecode(data.fps);
         var lh = new LayoutHelper(ctx);
         var gb = this.graph('getBounds');
         var ny = this.graph('niceCeiling', gb.h);
         var inset = 10;
+        var i, x, y;
 
         // Top edge
         var insetTop = 10;
 
-        // Bottom edge
-        var insetBottom = 10;
-
+        // Bottom edge (we'll return to this later...)
+        var tcbm = lh.textBoundingMetrics([tc.toTimecode(1)]);
+        var insetBottom = tcbm.height + 8;
         var paperHeight = cav.height - insetTop - insetBottom;
 
         // Left edge
         var nyTicks = this.graph('niceCeiling', paperHeight / 40);
         var yText = [];
-        for (var i = 0; i <= nyTicks; i++) {
+        for (i = 0; i <= nyTicks; i++) {
           var v = i * ny / nyTicks;
           yText.push(nf.format(v));
         }
 
-        var insetLeft = lh.textBoundingMetrics(yText).width + 12;
+        var minHoriz = Math.floor((tcbm.width + 4) / 2);
+        var insetLeft = Math.max(minHoriz, lh.textBoundingMetrics(yText).width + 12);
 
         // Right edge
-        var insetRight = 10;
+        var insetRight = Math.max(minHoriz, 10);
         var paperWidth = cav.width - insetLeft - insetRight;
+
+        // Bottom edge again
+        var nxTicks = Math.floor(paperWidth / (tcbm.width * 2));
+        var xText = [];
+        for (i = 0; i <= nxTicks; i++) {
+          var t = i * gb.w / nxTicks / data.fps;
+          xText.push(tc.toTimecode(t));
+        }
 
         data.layout = {
           paper: {
@@ -115,16 +126,23 @@
             y: ny
           },
           render: function() {
-            var i, x, y;
             ctx.fillStyle = new Colour(240, 240, 240).css();
             ctx.strokeStyle = new Colour(200, 200, 200).css();
             ctx.fillRect(this.paper.x, this.paper.y, this.paper.w, this.paper.h);
             for (i = 0; i <= nyTicks; i++) {
               x = this.paper.x;
-              y = this.paper.y + this.paper.h - i * paperHeight / nyTicks;
+              y = this.paper.y + paperHeight - i * paperHeight / nyTicks;
               ctx.beginPath();
               ctx.moveTo(x, y);
               ctx.lineTo(x + paperWidth, y);
+              ctx.stroke();
+            }
+            for (i = 0; i <= nxTicks; i++) {
+              x = this.paper.x + i * paperWidth / nxTicks;
+              y = this.paper.y;
+              ctx.beginPath();
+              ctx.moveTo(x, y);
+              ctx.lineTo(x, y + paperHeight);
               ctx.stroke();
             }
             return function() {
@@ -136,7 +154,7 @@
               ctx.stroke();
               // Left edge
               ctx.textBaseline = 'alphabetic';
-              ctx.fillRect = new Colour(0, 0, 0).css();
+              ctx.fillStyle = new Colour(0, 0, 0).css();
               for (i = 0; i <= nyTicks; i++) {
                 x = this.paper.x;
                 y = this.paper.y + this.paper.h - i * paperHeight / nyTicks;
@@ -145,6 +163,15 @@
                 ctx.lineTo(x, y);
                 ctx.stroke();
                 ctx.fillText(yText[i], 4, y);
+              }
+              for (i = 0; i <= nxTicks; i++) {
+                x = this.paper.x + i * paperWidth / nxTicks;
+                y = this.paper.y + this.paper.h;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x, y + 4);
+                ctx.stroke();
+                ctx.fillText(xText[i], x - tcbm.width / 2, y + tcbm.height);
               }
             }
           }

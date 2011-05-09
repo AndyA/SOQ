@@ -12,7 +12,8 @@ LayoutHelper.prototype = {
       width = Math.max(width, tm.width);
     }
     return {
-      width: width
+      width: width,
+      height: 14 // whatever...
     };
   }
 }
