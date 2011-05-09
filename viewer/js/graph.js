@@ -59,24 +59,6 @@
         h: h
       };
     },
-    getAxisScales: function() {
-      var b = this.graph('getBounds');
-      var y = this.graph('niceCeiling', b.h);
-      return {
-        x: b.w,
-        y: y
-      };
-    },
-    getGraphArea: function() {
-      var cav = this.get(0);
-      var inset = 10;
-      return {
-        x: inset,
-        y: inset,
-        w: cav.width - inset * 2,
-        h: cav.height - inset * 2
-      };
-    },
     niceCeiling: function(n) {
       var seq = [2, 2.5, 2];
       var sp = 0;
@@ -87,10 +69,34 @@
       }
       return nn;
     },
+    getLayout: function() {
+      var data = this.data('graph');
+      if (!data.layout) {
+        var gb = this.graph('getBounds');
+        var ny = this.graph('niceCeiling', gb.h);
+        var cav = this.get(0);
+        var inset = 10;
+        data.layout = {
+          paper: {
+            x: inset,
+            y: inset,
+            w: cav.width - inset * 2,
+            h: cav.height - inset * 2
+          },
+          data: {
+            x: gb.w,
+            y: ny
+          }
+        };
+      }
+      return data.layout;
+    },
     getTransform: function() {
-      var ga = this.graph('getGraphArea');
-      var ax = this.graph('getAxisScales');
-      var xf = [ga.w / ax.x, 0, 0, -ga.h / ax.y, ga.x, ga.h + ga.y];
+      var layout = this.graph('getLayout');
+      var xf = [
+      layout.paper.w / layout.data.x, 0, 0, -layout.paper.h / layout.data.y,
+      // -- this to force line break :) -- 
+      layout.paper.x, layout.paper.h + layout.paper.y];
       return xf;
     },
     lineMaker: function(ctx, scale) {
@@ -108,30 +114,30 @@
         }
       }
     },
-    renderPaper: function(cav, ctx, ga) {
+    renderPaper: function(cav, ctx, layout) {
       ctx.fillStyle = new Colour(240, 240, 240).css();
-      ctx.fillRect(ga.x, ga.y, ga.w, ga.h);
+      ctx.fillRect(layout.paper.x, layout.paper.y, layout.paper.w, layout.paper.h);
       // Deferred portion: draw after the graph data layer
       return function() {
         ctx.strokeStyle = new Colour(0, 0, 0).css();
         ctx.beginPath();
-        ctx.moveTo(ga.x, ga.y);
-        ctx.lineTo(ga.x, ga.y + ga.h);
-        ctx.lineTo(ga.x + ga.w, ga.y + ga.h);
+        ctx.moveTo(layout.paper.x, layout.paper.y);
+        ctx.lineTo(layout.paper.x, layout.paper.y + layout.paper.h);
+        ctx.lineTo(layout.paper.x + layout.paper.w, layout.paper.y + layout.paper.h);
         ctx.stroke();
       }
     },
     withGraphArea: function(cb) {
       var cav = this.get(0);
       var ctx = cav.getContext('2d');
-      var ga = this.graph('getGraphArea');
+      var layout = this.graph('getLayout');
 
       ctx.save();
 
       // Make lines with integer coordinates line up on pixel boundaries.
       ctx.translate(0.5, 0.5);
-      var after = this.graph('renderPaper', cav, ctx, ga);
-      cb.apply(this, [cav, ctx, ga]);
+      var after = this.graph('renderPaper', cav, ctx, layout);
+      cb.apply(this, [cav, ctx, layout]);
       after.apply(this);
 
       ctx.restore();
@@ -139,7 +145,7 @@
     render: function() {
       var data = this.data('graph');
       var $this = this;
-      this.graph('withGraphArea', function(cav, ctx, ga) {
+      this.graph('withGraphArea', function(cav, ctx, layout) {
         for (var i in data.ds) {
           var meta = data.meta[i];
           if (meta.show == 0) continue;
