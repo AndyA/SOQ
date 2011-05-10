@@ -137,13 +137,19 @@ DataSet.prototype = {
     }
     return n.sort();
   },
+  each: function(cb) {
+    var n = this.names();
+    for (var i in n) {
+      cb(n[i], this.get(n[i]));
+    }
+  },
   get: function(name) {
     var d = this.data[name];
     if (d) {
       if (d instanceof Array) return new DataSeries(name, this.meta, d);
       return new DataSet(name, this.meta, d);
     }
-    throw "No such element in dataset: " + name;
+    return null;
   },
   eachSeries: function(cb, prefix) {
     var path = prefix ? prefix.concat([this.name]) : [this.name];
