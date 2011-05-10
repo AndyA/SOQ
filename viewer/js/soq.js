@@ -24,7 +24,7 @@ $(function() {
     ds.load(source, function() {
       console.log("data loaded");
       showSet(type);
-      $('input[name=type,value=' + type + ']:radio').attr('checked', true);
+      $('input[name=type][value=' + type + ']:radio').attr('checked', true);
       $('input[name=type]:radio').click(function(e) {
         showSet(this.value);
       });
