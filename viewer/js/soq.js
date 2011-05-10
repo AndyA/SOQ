@@ -57,6 +57,9 @@ $(function() {
 
   function buildUI(ds) {
 
+    // Resize canvas
+    $('#graph').get(0).width = $('#content').width();
+
     var $type = $("#type");
     var $primary = $("#primary");
     var $others = $("#others");
