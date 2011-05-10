@@ -41,12 +41,7 @@ body, html, #body {
   margin: 1em;
 }
 
-#controls a {
-  color: red;
-}
-
-.ui-multiselect-all span, .ui-multiselect-none span {
-  color: white;
-  font-weight: normal;
-  font-size: 0.9em;
+#controls span.label {
+  margin-left: 2em;
+  font-size: 1.1em;
 }

@@ -96,7 +96,7 @@ $(function() {
       multiple: false,
       header: "Select type",
       selectedList: 1,
-      noneSelectedText: "Graph Type"
+      noneSelectedText: "Select..."
     }).bind("multiselectopen", function(event, ui) {
       $type.html(typeOptions($type, ds)).multiselect('refresh');
     }).bind("multiselectclick", function(event, ui) {
@@ -107,7 +107,7 @@ $(function() {
       multiple: false,
       header: "Select primary data",
       selectedList: 1,
-      noneSelectedText: "Primary Data"
+      noneSelectedText: "Select..."
     }).bind("multiselectopen", function(event, ui) {
       $primary.html(dataOptions($primary, ds)).multiselect('refresh');
     }).bind("multiselectclick", function(event, ui) {
@@ -116,7 +116,7 @@ $(function() {
 
     $others.multiselect({
       header: "Select other data",
-      noneSelectedText: "Other Data"
+      noneSelectedText: "Select..."
     }).bind("multiselectopen", function(event, ui) {
       $others.html(dataOptions($others, ds)).multiselect('refresh');
     }).bind("multiselectclick", function(event, ui) {
