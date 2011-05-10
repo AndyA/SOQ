@@ -21,7 +21,7 @@
       data.meta.push({
         show: 1.0
       });
-      return this;
+      return data.ds.length - 1;
     },
     showSeries: function(n, show) {
       var data = this.data('graph');

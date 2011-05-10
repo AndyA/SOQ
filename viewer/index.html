@@ -3,12 +3,10 @@
   <head>
     <meta charset="utf-8">
     <title>SOQ Viewer</title>
-    <link type="text/css" 
-          href="css/ui-darkness/jquery-ui-1.8.12.custom.css"
-          rel="stylesheet" />   
-    <link type="text/css" 
-          href="css/style.css"
-          rel="stylesheet" />   
+    <link type="text/css"
+          href="css/vader/jquery-ui-1.8.12.custom.css" rel="stylesheet" />   
+    <link type="text/css" href="css/jquery.multiselect.css" rel="stylesheet" />   
+    <link type="text/css" href="css/style.css" rel="stylesheet" />   
     <script type="text/javascript" src="js/jquery-1.5.2.min.js"></script>
     <script type="text/javascript" src="js/jquery-ui-1.8.12.custom.min.js"></script>
     <script type="text/javascript" src="js/jquery.multiselect.min.js"></script>
@@ -28,13 +26,13 @@
     </div>
     <div id="body">
       <div id="content">
+        <div id="controls">
+          <select id="type"></select>
+          <select id="primary"></select>
+          <select id="others" multiple="multiple"></select>
+        </div>
         <canvas id="graph" width="1200" height="500">
         </canvas>
-        <div id="controls">
-          Show: 
-          <input type="radio" name="type" value="psnr">psnr
-          <input type="radio" name="type" value="ssim">ssim
-        </div>
       </div>
     </div>
   </body>
