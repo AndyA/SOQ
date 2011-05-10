@@ -29,8 +29,12 @@ sub cook {
   print "Reshaping data\n";
   my $cooked = to_mma(
     reshape {
+      # $1 = filename
+      # $2 = array index
+      # $3 = type (ssim/psnr)
+      # $4 = channel (R/G/B or Y/U/V)
       s{ ^ ( \{ .+? \} ) ( \[ \d+ \] ) ( \{ .+? \} ) ( \{ .+? \} ) }
-    {$1$3$4$2}x;
+    {$3$1$4$2}x;
     }
     \%raw
   );
