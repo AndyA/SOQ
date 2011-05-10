@@ -20,7 +20,8 @@ URLParser.prototype = {
     if (rs[5] != null) {
       this.parts.frag = rs[5].substring(1);
     }
-    this.args = args || {};
+    this.args = $.extend({},
+    args || {});
     if (this.parts.query != null) {
       var aa = this.parts.query.split('&');
       for (i in aa) {
@@ -59,4 +60,3 @@ URLParser.prototype = {
     return new URLParser(this.parts.scheme + '://' + this.parts.host + rel);
   }
 }
-
