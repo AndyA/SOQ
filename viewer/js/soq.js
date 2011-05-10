@@ -24,11 +24,9 @@ $(function() {
     ds.load(source, function() {
       console.log("data loaded");
       showSet(type);
-      $('#show_psnr').click(function(e) {
-        showSet('psnr');
-      });
-      $('#show_ssim').click(function(e) {
-        showSet('ssim');
+      $('input[name=type,value=' + type + ']:radio').attr('checked', true);
+      $('input[name=type]:radio').click(function(e) {
+        showSet(this.value);
       });
     });
   }
