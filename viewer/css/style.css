@@ -35,7 +35,10 @@ body, html, #body {
   position: absolute;
   width: 100%;
   top: 70px;
-  padding: 1em;
+}
+
+#content {
+  margin: 1em;
 }
 
 #controls a {
