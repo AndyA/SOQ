@@ -29,7 +29,6 @@ $(function() {
       ol.push('<option ' + selAttr + 'value="' + k + '">' + v);
     });
     var foo = ol.join('');
-    console.log("options: " + foo);
     return foo;
   }
 
@@ -57,18 +56,22 @@ $(function() {
 
   function buildUI(ds) {
 
-    // Resize canvas
-    $('#graph').get(0).width = $('#content').width();
-
     var $type = $("#type");
     var $primary = $("#primary");
     var $others = $("#others");
     var $graph = $('#graph');
 
+    // Resize canvas
+    $graph.get(0).width = $('#content').width();
+
+    $graph.bind('regionselected.graph', function(e, lx, rx) {
+      console.log('region: ' + lx + ' => ' + rx);
+    });
+
     function updateGraph() {
       var i;
 
-      $graph.graph('init');
+      $graph.graph('reset');
 
       var typeSet = $type.multiselect('getChecked');
       var primarySet = $primary.multiselect('getChecked');
@@ -124,18 +127,6 @@ $(function() {
     });
   }
 
-  function showSet(type) {
-    console.log("displaying " + type);
-    $graph.graph('init');
-    $graph.graph('addSeries', ds.get(type).get('media/cycling/q200.csv'));
-    //      $graph.graph('addSeries', ds.get('media/cycling/q800.csv').get(type));
-    $graph.graph('addSeries', ds.get(type).get('media/cycling/q1600.csv'));
-    $graph.graph('showSeries', 0, 0.3);
-    $graph.graph('render');
-    url.part('frag', type);
-    window.location.href = url.toString();
-  }
-
   buildUI(ds);
 
   if ('source' in url.args) {
@@ -144,8 +135,7 @@ $(function() {
     var type = url.part('frag') || 'psnr';
     ds.load(source, function() {
       console.log("data loaded");
-      //      showSet(type);
-      $('#type option[value=' + type + ']').attr('selected', 'selected');
+      // TODO enable controls
     });
   }
 });

@@ -2,10 +2,9 @@
   var methods = {
     init: function(options) {
       var data = {
-        settings: {},
-        ds: [],
-        meta: [],
-        fps: 25
+        settings: {
+          fps: 25
+        },
       };
 
       if (options) {
@@ -13,6 +12,94 @@
       }
 
       this.data('graph', data);
+      this.graph('reset');
+      return this;
+    },
+    reset: function(options) {
+      var data = {
+        settings: this.data('graph').settings,
+        ds: [],
+        meta: [],
+        undo: this.clone().get(0)
+      };
+
+      if (options) {
+        $.extend(data.settings, options);
+      }
+
+      this.data('graph', data);
+
+      var $this = this;
+      var cav = $this.get(0);
+      var ctx = cav.getContext('2d');
+
+      function saveImage() {
+        data.undo.getContext('2d').drawImage(cav, 0, 0);
+      }
+
+      function restoreImage() {
+        ctx.drawImage(data.undo, 0, 0);
+      }
+
+      function drawSel(x) {
+        var paper = data.layout.paper;
+        var lx = Math.min(x, data.drx) + paper.x;
+        var rx = Math.max(x, data.drx) + paper.x;
+        if (lx != rx) {
+          ctx.save();
+          ctx.translate(0.5, 0.5);
+          ctx.fillStyle = new Colour(0, 0, 0, 0.2).css();
+          ctx.fillRect(lx, paper.y, rx - lx, paper.h);
+          ctx.restore();
+        }
+      }
+
+      function mouseEvent(e, type) {
+        if (!data.layout) return;
+        var paper = data.layout.paper;
+        var ofs = $this.offset();
+        var mx = e.pageX - ofs.left - paper.x;
+        var my = e.pageY - ofs.top - paper.y;
+
+        if (type == 'down') {
+          if (mx < 0 || my < 0 || mx > paper.w || my > paper.h) return;
+          saveImage();
+          data.drx = mx;
+          return;
+        }
+
+        if (data.drx == undefined) return;
+
+        switch (type) {
+        case 'move':
+          restoreImage();
+          drawSel(mx);
+          break;
+
+        case 'up':
+          restoreImage();
+          var lx = Math.min(mx, data.drx) * data.layout.data.x / paper.w;
+          var rx = Math.max(mx, data.drx) * data.layout.data.x / paper.w;
+          delete data.drx;
+          $this.trigger('regionselected.graph', [lx, rx]);
+          break;
+        }
+      }
+
+      function onMouseMove(e) {
+        mouseEvent(e, 'move');
+      }
+
+      function onMouseUp(e) {
+        mouseEvent(e, 'up');
+        $(document).unbind('mousemove', onMouseMove).unbind('mouseup', onMouseUp);
+      }
+
+      this.bind('mousedown', function(e) {
+        $(document).bind('mousemove', onMouseMove).bind('mouseup', onMouseUp);
+        mouseEvent(e, 'down');
+      });
+
       return this;
     },
     addSeries: function(ds) {
@@ -76,7 +163,7 @@
         var cav = this.get(0);
         var ctx = cav.getContext('2d');
         var nf = new NumberFormatter();
-        var tc = new Timecode(data.fps);
+        var tc = new Timecode(data.settings.fps);
         var lh = new LayoutHelper(ctx);
         var gb = this.graph('getBounds');
         var ny = this.graph('niceCeiling', gb.h);
@@ -110,7 +197,7 @@
         var nxTicks = Math.floor(paperWidth / (tcbm.width * 2));
         var xText = [];
         for (i = 0; i <= nxTicks; i++) {
-          var t = i * gb.w / nxTicks / data.fps;
+          var t = i * gb.w / nxTicks / data.settings.fps;
           xText.push(tc.toTimecode(t));
         }
 
